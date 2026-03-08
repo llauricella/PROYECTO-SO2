@@ -6,7 +6,7 @@ package DataStructures;
 
 /**
  *
- * @author Luigi Lauricella & Sebastián González
+ * @author Luigi Lauricella
  * @param <T>
  */
 public class LinkedList<T> {
@@ -45,4 +45,34 @@ public class LinkedList<T> {
 
     public int getSize() { return size; }
     public boolean isEmpty() { return size == 0; }
+    
+    // Remove element
+    public boolean remove(T data) {
+        if (head == null) return false;
+        
+        // Si es el primer elemento (head)
+        if (head.getData().equals(data)) {
+            head = head.getNext();
+            if (head == null) {
+                tail = null;
+            }
+            size--;
+            return true;
+        }
+        
+        // Buscar en el resto de la lista
+        Node<T> current = head;
+        while (current.getNext() != null) {
+            if (current.getNext().getData().equals(data)) {
+                current.setNext(current.getNext().getNext()); // Nos saltamos el nodo a borrar
+                if (current.getNext() == null) {
+                    tail = current; // Si borramos el último, actualizamos el tail
+                }
+                size--;
+                return true;
+            }
+            current = current.getNext();
+        }
+        return false;
+    }
 }

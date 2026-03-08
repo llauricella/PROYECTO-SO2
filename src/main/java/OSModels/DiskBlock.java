@@ -6,7 +6,7 @@ package OSModels;
 
 /**
  *
- * @author Luigi Lauricella & Sebastián González
+ * @author Luigi Lauricella 
  */
 public class DiskBlock {
     private int blockId;
