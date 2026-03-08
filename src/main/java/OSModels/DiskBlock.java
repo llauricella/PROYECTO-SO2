@@ -12,12 +12,14 @@ public class DiskBlock {
     private int blockId;
     private boolean isFree;
     private String ownerFile; // Nombre del archivo que lo ocupa (para colorearlo en la GUI)
+    private String colorHex;  // Para pintar el bloque en la GUI
     private int nextBlockId;  // Apuntador al siguiente bloque (-1 si es el último o está libre)
 
     public DiskBlock(int blockId) {
         this.blockId = blockId;
         this.isFree = true;
         this.ownerFile = null;
+        this.colorHex = "#FFFFFF"; // Blanco por defecto (Libre)
         this.nextBlockId = -1;
     }
     
@@ -76,5 +78,19 @@ public class DiskBlock {
      */
     public void setNextBlockId(int nextBlockId) {
         this.nextBlockId = nextBlockId;
+    }
+
+    /**
+     * @return the colorHex
+     */
+    public String getColorHex() {
+        return colorHex;
+    }
+
+    /**
+     * @param colorHex the colorHex to set
+     */
+    public void setColorHex(String colorHex) {
+        this.colorHex = colorHex;
     }
 }
