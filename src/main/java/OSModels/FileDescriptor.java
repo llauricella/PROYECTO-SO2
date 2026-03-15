@@ -15,6 +15,7 @@ public class FileDescriptor {
     private int startBlockId; // Apunta al primer bloque en el VirtualDisk
     private String owner;     // Dueño del archivo (ej. "admin" o "usuario")
     private String colorHex;  // Color asociado para la GUI
+    private FileLock lock;
 
     // Constructor para Archivos
     public FileDescriptor(String name, int sizeInBlocks, int startBlockId, String owner, String colorHex) {
@@ -24,6 +25,8 @@ public class FileDescriptor {
         this.startBlockId = startBlockId;
         this.owner = owner;
         this.colorHex = colorHex;
+        this.lock = new FileLock(); // Inicializamos el lock
+        
     }
 
     // Constructor para Directorios (Carpetas)
@@ -34,6 +37,7 @@ public class FileDescriptor {
         this.startBlockId = -1;
         this.owner = owner;
         this.colorHex = "#000000"; // Color neutro para carpetas
+        this.lock = new FileLock();
     }
 
     // --- GETTERS Y SETTERS ---
@@ -49,4 +53,6 @@ public class FileDescriptor {
     public String getOwner() { return owner; }
 
     public String getColorHex() { return colorHex; }
+    
+    public FileLock getLock() { return lock; }
 }

@@ -13,6 +13,7 @@ public class PCB {
     private ProcessState state;
     private String operation; // Ej: "READ", "CREATE", "UPDATE", "DELETE"
     private String fileName; // Archivo sobre el que opera
+    private Object[] args;
 
     public PCB(int pid, String operation, String fileName) {
         this.pid = pid;
@@ -77,4 +78,7 @@ public class PCB {
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+    
+    public Object[] getArgs() { return args; }
+    public void setArgs(Object[] args) { this.args = args; }
 }
