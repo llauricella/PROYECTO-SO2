@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package OSModels;
 
 import DataStructures.LinkedList;
@@ -10,22 +6,23 @@ import DataStructures.TreeNode;
 /**
  * Gestor de Procesos del Sistema Operativo.
  * Recibe peticiones de los usuarios, crea los PCB, los encola y los procesa usando un Hilo (Thread).
- * @author Luigi Lauricella &
+ * @author Luigi Lauricella & Sebastián González
  */
 public class ProcessManager implements Runnable {
     
-    // CAMBIO 1: Usamos tu LinkedList en lugar de Queue para que el Scheduler pueda buscar
     private LinkedList<PCB> readyQueue; 
-    
     private FileSystemManager fileSystem; 
     private DiskScheduler diskScheduler;
     private int nextPid; 
-    private boolean isRunning; 
+    private boolean isRunning;
+    private JournalManager journal;
 
-    public ProcessManager(FileSystemManager fileSystem, DiskScheduler diskScheduler) {
+    // CAMBIO: Añadimos JournalManager al constructor para poder usarlo
+    public ProcessManager(FileSystemManager fileSystem, DiskScheduler diskScheduler, JournalManager journal) {
         this.readyQueue = new LinkedList<>();
         this.fileSystem = fileSystem;
         this.diskScheduler = diskScheduler;
+        this.journal = journal; // Lo guardamos aquí
         this.nextPid = 1;
         this.isRunning = true;
     }
@@ -33,17 +30,15 @@ public class ProcessManager implements Runnable {
     // --- 1. SOLICITUD DE OPERACIONES ---
 
     public void requestCreateFile(TreeNode<FileDescriptor> parent, String name, int sizeInBlocks, String colorHex) {
-        // Al crear, no sabemos el bloque aún, así que le ponemos targetBlock = 0 por defecto
         PCB newProcess = new PCB(nextPid++, "CREATE_FILE", name, 0); 
         newProcess.setArgs(new Object[]{parent, sizeInBlocks, colorHex});
         newProcess.setState(ProcessState.READY);
         
-        readyQueue.add(newProcess); // Añadimos a la lista de espera
+        readyQueue.add(newProcess); 
         System.out.println("[Cola] Proceso " + newProcess.getPid() + " encolado. (Crear Archivo)");
     }
     
     public void requestDeleteNode(TreeNode<FileDescriptor> parent, TreeNode<FileDescriptor> nodeToDelete) {
-        // Al eliminar, el cabezal debe ir al bloque inicial del archivo
         int targetBlock = nodeToDelete.getData().getStartBlockId();
         
         PCB newProcess = new PCB(nextPid++, "DELETE_NODE", nodeToDelete.getData().getName(), targetBlock);
@@ -62,56 +57,68 @@ public class ProcessManager implements Runnable {
         
         while (isRunning) {
             if (!readyQueue.isEmpty()) {
-                
-                // CAMBIO 3: Ya no sacamos el primero ciegamente. 
-                // Le pedimos al Planificador que elija el siguiente según la política (SSTF, SCAN, etc.)
                 PCB nextProcess = diskScheduler.getNextProcess(readyQueue);
                 
                 if (nextProcess != null) {
                     System.out.println("-> [Cabezal movido al bloque " + diskScheduler.getCurrentHeadPosition() + "]");
                     
-                    // Lanzamos el hilo concurrente
                     Thread processThread = new Thread(() -> executeProcess(nextProcess));
                     processThread.start();
                     
-                    // Pequeña pausa para no saturar la creación de hilos y dar tiempo a simular el movimiento del disco
                     try { Thread.sleep(500); } catch (InterruptedException e) {}
                 }
-                
             } else {
                 try { Thread.sleep(500); } catch (InterruptedException e) {}
             }
         }
     }
 
-    // --- 3. LÓGICA DE EJECUCIÓN CONCURRENTE Y LOCKS ---
+    // --- 3. LÓGICA DE EJECUCIÓN, LOCKS Y JOURNALING ---
+    // ESTE ES EL MÉTODO QUE SE HABÍA BORRADO
     private void executeProcess(PCB process) {
         process.setState(ProcessState.RUNNING);
         Object[] args = process.getArgs();
         TreeNode<FileDescriptor> parentFolder = (TreeNode<FileDescriptor>) args[0];
         
         try {
-            // Pedimos el candado exclusivo
+            // 1. Pedimos el candado exclusivo (Locks de la Fase 4)
             process.setState(ProcessState.BLOCKED); 
             parentFolder.getData().getLock().acquireWriteLock(); 
             
             process.setState(ProcessState.RUNNING);
-            System.out.println("[Hilo-" + process.getPid() + "] Ejecutando " + process.getOperation() + " en bloque " + process.getTargetBlock());
             
             // Simular el tiempo de E/S
             Thread.sleep(2000); 
             
-            // Ejecutar la operación real
+            // 2. Ejecutar la operación con Journaling (Fase 6)
             if (process.getOperation().equals("CREATE_FILE")) {
                 int size = (Integer) args[1];
                 String color = (String) args[2];
-                fileSystem.createFile(parentFolder, process.getFileName(), size, color);
+                
+                // --- INICIO JOURNALING ---
+                JournalEntry logEntry = journal.logPendingOperation("CREATE_FILE", process.getFileName(), -1);
+                
+                // Ejecutamos operación real
+                boolean success = fileSystem.createFile(parentFolder, process.getFileName(), size, color);
+                
+                // --- SIMULACIÓN DE FALLO (CRASH) ---
+                if (journal.isCrashSimulated()) {
+                    System.out.println("!!! ERROR FATAL SIMULADO: EL SISTEMA SE APAGA INESPERADAMENTE !!!");
+                    parentFolder.getData().getLock().releaseWriteLock();
+                    return; // Salimos ANTES de hacer el commit
+                }
+
+                // --- COMMIT ---
+                if (success) {
+                    journal.commitOperation(logEntry);
+                }
+                
             } else if (process.getOperation().equals("DELETE_NODE")) {
                 TreeNode<FileDescriptor> nodeDelete = (TreeNode<FileDescriptor>) args[1];
                 fileSystem.deleteNode(parentFolder, nodeDelete);
             }
             
-            // Liberar el candado
+            // 3. Liberar el candado
             parentFolder.getData().getLock().releaseWriteLock();
             System.out.println("[Hilo-" + process.getPid() + "] Operación terminada.");
             
@@ -126,6 +133,5 @@ public class ProcessManager implements Runnable {
         this.isRunning = false;
     }
     
-    // Getter para la GUI
     public LinkedList<PCB> getReadyQueue() { return readyQueue; }
 }
