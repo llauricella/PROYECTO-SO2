@@ -14,12 +14,15 @@ public class PCB {
     private String operation; // Ej: "READ", "CREATE", "UPDATE", "DELETE"
     private String fileName; // Archivo sobre el que opera
     private Object[] args;
+    private int targetBlock;
 
-    public PCB(int pid, String operation, String fileName) {
+    public PCB(int pid, String operation, String fileName, int targetBlock) {
         this.pid = pid;
-        this.state = ProcessState.NEW; // Inicia en estado Nuevo
+        this.state = ProcessState.NEW;
         this.operation = operation;
         this.fileName = fileName;
+        this.targetBlock = targetBlock;
+        this.args = null;
     }
 
     // Getters & Setters
@@ -81,4 +84,6 @@ public class PCB {
     
     public Object[] getArgs() { return args; }
     public void setArgs(Object[] args) { this.args = args; }
+    public int getTargetBlock() { return targetBlock; }
+    public void setTargetBlock(int targetBlock) { this.targetBlock = targetBlock; }
 }
