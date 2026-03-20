@@ -49,4 +49,9 @@ public class FileDescriptor {
     public String getOwner() { return owner; }
 
     public String getColorHex() { return colorHex; }
+    
+    @Override
+    public String toString() {
+        return this.name; 
+    }
 }
