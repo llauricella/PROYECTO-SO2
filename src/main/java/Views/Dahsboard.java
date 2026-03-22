@@ -21,6 +21,7 @@ public class Dahsboard extends javax.swing.JFrame {
     private FileSystemManager fsManager;
     private DefaultTableModel modeloTabla;
     private DataStructures.LinkedList<OSModels.DiskRequest> colaPeticiones = new DataStructures.LinkedList<>();
+    private int posicionCabezal = 0;
 
     /**
      * Creates new form Dahsboard
@@ -122,7 +123,7 @@ public class Dahsboard extends javax.swing.JFrame {
         }
     }
     
-    // Método para pintar los cuadritos del disco (Requerimiento 6 visual)
+ // Método para pintar los cuadritos del disco (Requerimiento 6 visual)
     private void actualizarDiscoVisual() {
         panelDiscoVirtual.removeAll();
         // Creamos una cuadrícula de 10x10 (100 bloques) con 2 pixeles de separación
@@ -131,7 +132,9 @@ public class Dahsboard extends javax.swing.JFrame {
         OSModels.DiskBlock[] bloques = disk.getBlocks();
         
         for (int i = 0; i < disk.getTotalBlocks(); i++) {
-            javax.swing.JPanel cuadro = new javax.swing.JPanel();
+            // CAMBIO: Usamos JLabel en lugar de JPanel para poder mostrar el número centrado
+            javax.swing.JLabel cuadro = new javax.swing.JLabel(String.valueOf(i), javax.swing.SwingConstants.CENTER);
+            cuadro.setOpaque(true); // OBLIGATORIO en los JLabel para que el color de fondo se pueda ver
             
             // Si el bloque está libre, lo pintamos gris claro. Si está ocupado, usamos su color Hex.
             if (bloques[i].isIsFree()) {
@@ -140,8 +143,19 @@ public class Dahsboard extends javax.swing.JFrame {
                 cuadro.setBackground(java.awt.Color.decode(bloques[i].getColorHex()));
             }
             
-            // Le ponemos un borde y un texto que sale al pasar el mouse por encima (Hover)
-            cuadro.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(150, 150, 150)));
+            // Le ponemos la letra negra para que el número del bloque resalte
+            cuadro.setForeground(java.awt.Color.BLACK);
+            
+            // ---> LA MAGIA DEL CABEZAL (BORDE ROJO) <---
+            if (i == posicionCabezal) {
+                // Borde rojo, de 3 pixeles de grosor, si es donde está la aguja
+                cuadro.setBorder(javax.swing.BorderFactory.createLineBorder(java.awt.Color.RED, 3));
+            } else {
+                // Borde gris delgadito para el resto de los bloques
+                cuadro.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(150, 150, 150)));
+            }
+            
+            // Le ponemos el texto que sale al pasar el mouse por encima (Hover)
             cuadro.setToolTipText("Bloque " + i + (bloques[i].isIsFree() ? " (Libre)" : " - " + bloques[i].getOwnerFile()));
             
             panelDiscoVirtual.add(cuadro);
@@ -186,6 +200,29 @@ public class Dahsboard extends javax.swing.JFrame {
         return null;
     }
     
+    // Método recursivo para buscar y eliminar el nodo de la LinkedList lógica
+    private boolean eliminarNodoLogico(TreeNode<FileDescriptor> actual, FileDescriptor target) {
+        if (actual == null) return false;
+        
+        LinkedList<TreeNode<FileDescriptor>> hijos = actual.getChildren();
+        
+        for (int i = 0; i < hijos.getSize(); i++) {
+            TreeNode<FileDescriptor> hijo = hijos.get(i);
+            
+            // Si encontramos el archivo/carpeta exacto, lo borramos de la LinkedList
+            if (hijo.getData() == target) {
+                hijos.remove(hijo);
+                return true; 
+            }
+            
+            // Si es una carpeta, entramos a buscar dentro de ella
+            if (eliminarNodoLogico(hijo, target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     // ==========================================
     //        6. MÉTODOS DE MONITOREO (LOGS)
     // ==========================================
@@ -212,6 +249,7 @@ public class Dahsboard extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        buttonGroup1 = new javax.swing.ButtonGroup();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTreeArchivos = new javax.swing.JTree();
@@ -222,6 +260,11 @@ public class Dahsboard extends javax.swing.JFrame {
         panelDiscoVirtual = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
         comboPoliticas = new javax.swing.JComboBox<>();
+        jButton6 = new javax.swing.JButton();
+        lblCiclo = new javax.swing.JLabel();
+        lblCabeza = new javax.swing.JLabel();
+        radioAdmin = new javax.swing.JRadioButton();
+        radioUsuario = new javax.swing.JRadioButton();
         jPanel4 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -301,39 +344,83 @@ public class Dahsboard extends javax.swing.JFrame {
         );
         panelDiscoVirtualLayout.setVerticalGroup(
             panelDiscoVirtualLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 278, Short.MAX_VALUE)
         );
 
-        jButton1.setText("Ejecutar Planificador");
+        jButton1.setText("Agregar a cola");
         jButton1.addActionListener(this::jButton1ActionPerformed);
 
-        comboPoliticas.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        comboPoliticas.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "FIFO", "SSTF", "SCAN", "C-SCAN" }));
+
+        jButton6.setText("Procesar cola");
+        jButton6.addActionListener(this::jButton6ActionPerformed);
+
+        lblCiclo.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblCiclo.setText("Ciclo: 0");
+
+        lblCabeza.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblCabeza.setText("Cabeza: 0");
+
+        buttonGroup1.add(radioAdmin);
+        radioAdmin.setSelected(true);
+        radioAdmin.setText("Administrador");
+        radioAdmin.addActionListener(this::radioAdminActionPerformed);
+
+        buttonGroup1.add(radioUsuario);
+        radioUsuario.setText("Usuario");
+        radioUsuario.addActionListener(this::radioUsuarioActionPerformed);
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGap(0, 368, Short.MAX_VALUE)
+                        .addContainerGap()
+                        .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGap(16, 16, 16)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblCiclo)
+                            .addComponent(lblCabeza))
+                        .addGap(42, 42, 42)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(radioAdmin)
+                            .addComponent(radioUsuario, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 59, Short.MAX_VALUE)
                         .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(jButton1))
-                    .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(jButton6)
+                        .addGap(18, 18, 18)
+                        .addComponent(jButton1)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton1)
-                    .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(23, 23, 23))
+                .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 36, Short.MAX_VALUE)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton6)
+                            .addComponent(jButton1))
+                        .addGap(13, 13, 13))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(lblCiclo)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblCabeza))
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(radioAdmin)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(radioUsuario)))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
 
         jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Monitoreo del Sistema"));
@@ -426,12 +513,12 @@ public class Dahsboard extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(32, 32, 32)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
@@ -443,7 +530,7 @@ public class Dahsboard extends javax.swing.JFrame {
                         .addComponent(jButton4)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButton5)
-                        .addGap(0, 118, Short.MAX_VALUE)))
+                        .addGap(0, 102, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -567,56 +654,45 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-                                       
-        // 1. Obtener el nodo visual de Swing
-        DefaultMutableTreeNode nodoVisual = (DefaultMutableTreeNode) jTreeArchivos.getLastSelectedPathComponent();
+                                          
+        javax.swing.tree.DefaultMutableTreeNode nodoVisual = (javax.swing.tree.DefaultMutableTreeNode) jTreeArchivos.getLastSelectedPathComponent();
 
         if (nodoVisual == null || nodoVisual.isRoot()) {
             javax.swing.JOptionPane.showMessageDialog(this, "Selecciona un archivo o carpeta (que no sea la Raíz) para eliminar.");
             return;
         }
 
-        // 2. Obtener el nodo lógico (TreeNode)
-        TreeNode<FileDescriptor> nodoABorrar = (TreeNode<FileDescriptor>) nodoVisual.getUserObject();
-        
-        // 3. Obtener el padre (Visual -> Lógico)
-        DefaultMutableTreeNode padreVisual = (DefaultMutableTreeNode) nodoVisual.getParent();
-        TreeNode<FileDescriptor> padreLogico = (TreeNode<FileDescriptor>) padreVisual.getUserObject();
+        // Extraemos directamente el FileDescriptor
+        FileDescriptor fd = (FileDescriptor) nodoVisual.getUserObject();
 
-        int confirmacion = javax.swing.JOptionPane.showConfirmDialog(this, "¿Eliminar '" + nodoABorrar.getData().getName() + "'?");
+        int confirmacion = javax.swing.JOptionPane.showConfirmDialog(this, "¿Eliminar '" + fd.getName() + "'?");
 
         if (confirmacion == javax.swing.JOptionPane.YES_OPTION) {
-            FileDescriptor fd = nodoABorrar.getData();
-
-            // 4. Liberar bloques en el disco si es un archivo
+            
+            // 1. Liberar bloques del disco (si es un archivo)
             if (!fd.isDirectory()) {
                 OSModels.DiskBlock[] bloques = disk.getBlocks();
                 for (int i = fd.getStartBlockId(); i < fd.getStartBlockId() + fd.getSizeInBlocks(); i++) {
                     if (i < bloques.length) {
                         bloques[i].setIsFree(true);
                         bloques[i].setOwnerFile(null);
-                        bloques[i].setColorHex("#DCDCDC");
+                        bloques[i].setColorHex("#DCDCDC"); // Gris de libre
                     }
                 }
             }
 
-            // 5. ELIMINACIÓN CLAVE: Buscamos y removemos de la LinkedList del padre
-            LinkedList<TreeNode<FileDescriptor>> hijos = padreLogico.getChildren();
-            for (int i = 0; i < hijos.getSize(); i++) {
-                if (hijos.get(i) == nodoABorrar) {
-                    hijos.remove(hijos.get(i));
-                    break;
-                }
-            }
+            // 2. ELIMINACIÓN LÓGICA (Buscamos y borramos desde la Raíz)
+            eliminarNodoLogico(fsManager.getRoot(), fd);
             
-            // 6. Refrescar todo
-            actualizarArbolVisual();
+            // 3. ELIMINACIÓN VISUAL
+            javax.swing.tree.DefaultTreeModel modeloArbol = (javax.swing.tree.DefaultTreeModel) jTreeArchivos.getModel();
+            modeloArbol.removeNodeFromParent(nodoVisual);
+
+            // 4. Refrescar interfaces
             actualizarTabla();
             actualizarDiscoVisual();
             agregarLog("ELIMINADO: " + fd.getName());
         }
-    
-    
     
     
     // TODO add your handling code here:
@@ -648,6 +724,192 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
             // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+
+    procesarPlanificador(); // <-- ¡ESTO ES LO MÁS IMPORTANTE!
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    private void radioUsuarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioUsuarioActionPerformed
+                                            
+    // Desactivamos los botones de modificación
+    jButton2.setEnabled(false); // Asumiendo que este es Crear Archivo
+    jButton3.setEnabled(false); // Crear Directorio
+    jButton4.setEnabled(false); // Renombrar
+    jButton5.setEnabled(false); // Eliminar
+
+    agregarLog("Cambiado a Modo USUARIO: Permisos de escritura revocados.");
+        // TODO add your handling code here:
+    }//GEN-LAST:event_radioUsuarioActionPerformed
+
+    private void radioAdminActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioAdminActionPerformed
+                                        
+    // Reactivamos todos los botones
+    jButton2.setEnabled(true); 
+    jButton3.setEnabled(true); 
+    jButton4.setEnabled(true); 
+    jButton5.setEnabled(true); 
+
+    agregarLog("Cambiado a Modo ADMINISTRADOR: Todos los permisos concedidos.");
+        // TODO add your handling code here:
+    }//GEN-LAST:event_radioAdminActionPerformed
+
+   private void procesarPlanificador() {
+        // 1. Validar que haya algo que procesar
+        if (colaPeticiones.getSize() == 0) {
+            javax.swing.JOptionPane.showMessageDialog(this, "La cola de peticiones está vacía.");
+            return;
+        }
+
+        String politica = comboPoliticas.getSelectedItem().toString();
+        int movimientosTotales = 0;
+        
+        agregarLog("--- INICIANDO PLANIFICADOR: " + politica + " ---");
+        agregarLog("Cabezal inicia en el bloque: " + posicionCabezal);
+
+        // ==========================================
+        // 1. LÓGICA FIFO (First In, First Out)
+        // ==========================================
+        if (politica.equals("FIFO")) {
+            for (int i = 0; i < colaPeticiones.getSize(); i++) {
+                OSModels.DiskRequest peticion = colaPeticiones.get(i);
+                int distancia = Math.abs(posicionCabezal - peticion.getBlockId());
+                movimientosTotales += distancia;
+                
+                agregarLog("-> [FIFO] Leyendo '" + peticion.getFileName() + "' en bloque " + peticion.getBlockId() + " (Mov: " + distancia + ")");
+                posicionCabezal = peticion.getBlockId(); 
+            }
+            
+        // ==========================================
+        // 2. LÓGICA SSTF (Shortest Seek Time First)
+        // ==========================================
+        } else if (politica.equals("SSTF")) {
+            java.util.List<OSModels.DiskRequest> pendientes = new java.util.ArrayList<>();
+            for (int i = 0; i < colaPeticiones.getSize(); i++) { pendientes.add(colaPeticiones.get(i)); }
+
+            while (!pendientes.isEmpty()) {
+                int indiceMasCercano = -1;
+                int distanciaMinima = Integer.MAX_VALUE;
+
+                for (int i = 0; i < pendientes.size(); i++) {
+                    int distancia = Math.abs(posicionCabezal - pendientes.get(i).getBlockId());
+                    if (distancia < distanciaMinima) {
+                        distanciaMinima = distancia;
+                        indiceMasCercano = i;
+                    }
+                }
+
+                OSModels.DiskRequest peticionElegida = pendientes.get(indiceMasCercano);
+                movimientosTotales += distanciaMinima;
+                
+                agregarLog("-> [SSTF] Leyendo '" + peticionElegida.getFileName() + "' en bloque " + peticionElegida.getBlockId() + " (Mov: " + distanciaMinima + ")");
+                posicionCabezal = peticionElegida.getBlockId();
+                pendientes.remove(indiceMasCercano);
+            }
+            
+        // ==========================================
+        // 3. LÓGICA SCAN (Algoritmo del Elevador)
+        // ==========================================
+        } else if (politica.equals("SCAN")) {
+            int limiteDisco = disk.getBlocks().length - 1; // El último bloque físico del disco
+            
+            java.util.List<OSModels.DiskRequest> derecha = new java.util.ArrayList<>();
+            java.util.List<OSModels.DiskRequest> izquierda = new java.util.ArrayList<>();
+
+            // Separamos las peticiones según dónde están respecto al cabezal
+            for (int i = 0; i < colaPeticiones.getSize(); i++) {
+                OSModels.DiskRequest req = colaPeticiones.get(i);
+                if (req.getBlockId() >= posicionCabezal) derecha.add(req);
+                else izquierda.add(req);
+            }
+
+            // Ordenamos: Derecha sube (ascendente), Izquierda baja (descendente)
+            derecha.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
+            izquierda.sort((a, b) -> Integer.compare(b.getBlockId(), a.getBlockId()));
+
+            // Subimos recogiendo peticiones
+            for (OSModels.DiskRequest req : derecha) {
+                int distancia = Math.abs(posicionCabezal - req.getBlockId());
+                movimientosTotales += distancia;
+                agregarLog("-> [SCAN-Sube] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
+                posicionCabezal = req.getBlockId();
+            }
+
+            // Si hay peticiones a la izquierda, el ascensor debe ir hasta el tope y rebotar
+            if (!izquierda.isEmpty()) {
+                int distAlFinal = Math.abs(posicionCabezal - limiteDisco);
+                movimientosTotales += distAlFinal;
+                agregarLog("-> [SCAN] Toca el fondo del disco (Bloque " + limiteDisco + ") (Mov: " + distAlFinal + ")");
+                posicionCabezal = limiteDisco;
+
+                // Bajamos recogiendo el resto
+                for (OSModels.DiskRequest req : izquierda) {
+                    int distancia = Math.abs(posicionCabezal - req.getBlockId());
+                    movimientosTotales += distancia;
+                    agregarLog("-> [SCAN-Baja] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
+                    posicionCabezal = req.getBlockId();
+                }
+            }
+            
+        // ==========================================
+        // 4. LÓGICA C-SCAN (Elevador Circular)
+        // ==========================================
+        } else if (politica.equals("C-SCAN")) {
+            int limiteDisco = disk.getBlocks().length - 1; 
+            
+            java.util.List<OSModels.DiskRequest> derecha = new java.util.ArrayList<>();
+            java.util.List<OSModels.DiskRequest> izquierda = new java.util.ArrayList<>();
+
+            for (int i = 0; i < colaPeticiones.getSize(); i++) {
+                OSModels.DiskRequest req = colaPeticiones.get(i);
+                if (req.getBlockId() >= posicionCabezal) derecha.add(req);
+                else izquierda.add(req);
+            }
+
+            // En C-SCAN TODO se lee de subida (ascendente)
+            derecha.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
+            izquierda.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
+
+            for (OSModels.DiskRequest req : derecha) {
+                int distancia = Math.abs(posicionCabezal - req.getBlockId());
+                movimientosTotales += distancia;
+                agregarLog("-> [C-SCAN] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
+                posicionCabezal = req.getBlockId();
+            }
+
+            if (!izquierda.isEmpty()) {
+                // Toca el final
+                movimientosTotales += Math.abs(posicionCabezal - limiteDisco);
+                agregarLog("-> [C-SCAN] Toca el final del disco (Bloque " + limiteDisco + ")");
+                
+                // Salto brusco al inicio (bloque 0)
+                movimientosTotales += limiteDisco; 
+                posicionCabezal = 0;
+                agregarLog("-> [C-SCAN] Salta al inicio del disco (Bloque 0)");
+
+                // Vuelve a subir recogiendo las que faltaban
+                for (OSModels.DiskRequest req : izquierda) {
+                    int distancia = Math.abs(posicionCabezal - req.getBlockId());
+                    movimientosTotales += distancia;
+                    agregarLog("-> [C-SCAN] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
+                    posicionCabezal = req.getBlockId();
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. RESUMEN Y LIMPIEZA
+        // ==========================================
+        agregarLog("TOTAL DE BLOQUES RECORRIDOS: " + movimientosTotales);
+        agregarLog("--- FIN DEL PROCESAMIENTO ---");
+        
+        colaPeticiones = new DataStructures.LinkedList<>(); 
+        actualizarColaVisual();
+        
+        lblCabeza.setText("Cabeza: " + posicionCabezal);
+        actualizarDiscoVisual();
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -677,12 +939,14 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> comboPoliticas;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
@@ -694,7 +958,11 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
     private javax.swing.JTree jTreeArchivos;
+    private javax.swing.JLabel lblCabeza;
+    private javax.swing.JLabel lblCiclo;
     private javax.swing.JPanel panelDiscoVirtual;
+    private javax.swing.JRadioButton radioAdmin;
+    private javax.swing.JRadioButton radioUsuario;
     private javax.swing.JScrollPane tablaAsignacion;
     private javax.swing.JTextArea txtCola;
     private javax.swing.JTextArea txtLog;
