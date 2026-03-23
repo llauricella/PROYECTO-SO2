@@ -22,6 +22,9 @@ public class Dahsboard extends javax.swing.JFrame {
     private DefaultTableModel modeloTabla;
     private DataStructures.LinkedList<OSModels.DiskRequest> colaPeticiones = new DataStructures.LinkedList<>();
     private int posicionCabezal = 0;
+    private javax.swing.Timer timerAnimacion;
+    private java.util.List<Integer> rutaCompleta = new java.util.ArrayList<>();
+    private int pasoActual = 0;
 
     /**
      * Creates new form Dahsboard
@@ -265,6 +268,9 @@ public class Dahsboard extends javax.swing.JFrame {
         lblCabeza = new javax.swing.JLabel();
         radioAdmin = new javax.swing.JRadioButton();
         radioUsuario = new javax.swing.JRadioButton();
+        sliderVelocidad = new javax.swing.JSlider();
+        btnPausa = new javax.swing.JButton();
+        lblVelocidad = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         txtLog = new javax.swing.JTextArea();
@@ -276,6 +282,13 @@ public class Dahsboard extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         jButton5 = new javax.swing.JButton();
+        btnLeer = new javax.swing.JButton();
+        lblEstadisticas = new javax.swing.JLabel();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        menuExportarTxt = new javax.swing.JMenuItem();
+        menuExportarCsv = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -294,9 +307,9 @@ public class Dahsboard extends javax.swing.JFrame {
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 134, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 160, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -370,15 +383,23 @@ public class Dahsboard extends javax.swing.JFrame {
         radioUsuario.setText("Usuario");
         radioUsuario.addActionListener(this::radioUsuarioActionPerformed);
 
+        sliderVelocidad.setMaximum(1000);
+        sliderVelocidad.setMinimum(50);
+        sliderVelocidad.setValue(500);
+        sliderVelocidad.addChangeListener(this::sliderVelocidadStateChanged);
+
+        btnPausa.setText("Pausar");
+        btnPausa.addActionListener(this::btnPausaActionPerformed);
+
+        lblVelocidad.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblVelocidad.setText("Velocidad: Normal (x1)");
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addGap(16, 16, 16)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -388,12 +409,22 @@ public class Dahsboard extends javax.swing.JFrame {
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(radioAdmin)
                             .addComponent(radioUsuario, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 59, Short.MAX_VALUE)
-                        .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(jButton6)
-                        .addGap(18, 18, 18)
-                        .addComponent(jButton1)))
+                        .addGap(42, 71, Short.MAX_VALUE)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                                .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButton6)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButton1))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                                .addComponent(sliderVelocidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(btnPausa))
+                            .addComponent(lblVelocidad)))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -403,7 +434,11 @@ public class Dahsboard extends javax.swing.JFrame {
                 .addComponent(panelDiscoVirtual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 36, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(btnPausa)
+                            .addComponent(sliderVelocidad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(comboPoliticas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jButton6)
@@ -417,7 +452,9 @@ public class Dahsboard extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(lblCabeza))
                             .addGroup(jPanel3Layout.createSequentialGroup()
-                                .addComponent(radioAdmin)
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(radioAdmin)
+                                    .addComponent(lblVelocidad))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(radioUsuario)))
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
@@ -485,6 +522,29 @@ public class Dahsboard extends javax.swing.JFrame {
         jButton5.setText("Eliminar");
         jButton5.addActionListener(this::jButton5ActionPerformed);
 
+        btnLeer.setText("Leer");
+        btnLeer.addActionListener(this::btnLeerActionPerformed);
+
+        lblEstadisticas.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblEstadisticas.setText("Tiempo Promedio: 0 blq/pet");
+
+        jMenu1.setText("Archivo");
+
+        menuExportarTxt.setText("Exportar Resumen del Sistema (.txt)");
+        menuExportarTxt.addActionListener(this::menuExportarTxtActionPerformed);
+        jMenu1.add(menuExportarTxt);
+
+        menuExportarCsv.setText("Exportar Estadísticas Procesos (.csv)");
+        menuExportarCsv.addActionListener(this::menuExportarCsvActionPerformed);
+        jMenu1.add(menuExportarCsv);
+
+        jMenuBar1.add(jMenu1);
+
+        jMenu2.setText("Reportes");
+        jMenuBar1.add(jMenu2);
+
+        setJMenuBar(jMenuBar1);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -499,20 +559,22 @@ public class Dahsboard extends javax.swing.JFrame {
                             .addComponent(jButton2)
                             .addComponent(jButton3)
                             .addComponent(jButton4)
-                            .addComponent(jButton5))
-                        .addGap(0, 24, Short.MAX_VALUE))
+                            .addComponent(jButton5)
+                            .addComponent(btnLeer)
+                            .addComponent(lblEstadisticas))
+                        .addGap(37, 37, 37))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGap(18, 18, 18)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap())
+                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(32, 32, 32)
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -530,7 +592,10 @@ public class Dahsboard extends javax.swing.JFrame {
                         .addComponent(jButton4)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButton5)
-                        .addGap(0, 102, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnLeer)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
+                        .addComponent(lblEstadisticas)))
                 .addContainerGap())
         );
 
@@ -754,35 +819,227 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
         // TODO add your handling code here:
     }//GEN-LAST:event_radioAdminActionPerformed
 
+    private void btnLeerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLeerActionPerformed
+// 1. Obtener el nodo que el usuario seleccionó en el árbol
+        javax.swing.tree.DefaultMutableTreeNode nodoSeleccionado = 
+            (javax.swing.tree.DefaultMutableTreeNode) jTreeArchivos.getLastSelectedPathComponent();
+
+        // Validamos que haya seleccionado algo
+        if (nodoSeleccionado == null) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Por favor, selecciona un archivo del árbol primero.");
+            return;
+        }
+
+        // Validamos que sea un archivo final (hoja) y no una carpeta (raíz, etc.)
+        if (!nodoSeleccionado.isLeaf()) {
+             javax.swing.JOptionPane.showMessageDialog(this, "Por favor selecciona un archivo válido, no una carpeta.");
+             return;
+        }
+
+        // 2. Extraemos el nombre del archivo
+        String nombreArchivo = nodoSeleccionado.getUserObject().toString();
+        
+        // (Opcional) Si en tu árbol los nombres salen como "foto.png [4 bloques]", 
+        // esta línea extrae solo la primera palabra para buscarla bien en el disco:
+        nombreArchivo = nombreArchivo.split(" ")[0]; 
+
+        // 3. Recorremos el disco buscando los bloques de este archivo
+        OSModels.DiskBlock[] bloques = disk.getBlocks();
+        int bloquesEncolados = 0;
+
+        for (int i = 0; i < disk.getTotalBlocks(); i++) {
+            // Si el bloque NO está libre y su dueño coincide con el archivo que seleccionamos
+            if (!bloques[i].isIsFree() && bloques[i].getOwnerFile() != null) {
+                if (bloques[i].getOwnerFile().equals(nombreArchivo)) {
+                    
+                    // ¡Lo encontramos! Creamos la petición y la mandamos a la cola
+                    OSModels.DiskRequest nuevaPeticion = new OSModels.DiskRequest(nombreArchivo, i, "LECTURA");
+                    colaPeticiones.add(nuevaPeticion);
+                    bloquesEncolados++;
+                }
+            }
+        }
+
+        // 4. Reportamos el resultado
+        if (bloquesEncolados > 0) {
+            agregarLog("Se enviaron " + bloquesEncolados + " bloques de '" + nombreArchivo + "' a la cola.");
+            actualizarColaVisual(); // Refrescamos la lista en la pantalla
+        } else {
+            javax.swing.JOptionPane.showMessageDialog(this, "No se encontraron datos de este archivo en el disco.");
+        }
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnLeerActionPerformed
+
+    private void btnPausaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPausaActionPerformed
+if (timerAnimacion != null) {
+         if (timerAnimacion.isRunning()) {
+             timerAnimacion.stop();
+             btnPausa.setText("Reanudar");
+         } else {
+             timerAnimacion.start();
+             btnPausa.setText("Pausar");
+         }
+     }
+// TODO add your handling code here:
+    }//GEN-LAST:event_btnPausaActionPerformed
+
+    private void sliderVelocidadStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderVelocidadStateChanged
+                                            
+        int valor = sliderVelocidad.getValue();
+        
+        // 1. Actualizamos la velocidad del motor (el Timer)
+        if (timerAnimacion != null) {
+            timerAnimacion.setDelay(valor);
+        }
+        
+        // 2. Actualizamos el texto visual para el usuario
+        if (lblVelocidad != null) {
+            if (valor <= 50) {
+                lblVelocidad.setText("Velocidad: Muy Rápida (x4)");
+            } else if (valor <= 250) {
+                lblVelocidad.setText("Velocidad: Rápida (x2)");
+            } else if (valor <= 500) {
+                lblVelocidad.setText("Velocidad: Normal (x1)");
+            } else {
+                lblVelocidad.setText("Velocidad: Lenta (x0.5)");
+            }
+        }
+// TODO add your handling code here:
+    }//GEN-LAST:event_sliderVelocidadStateChanged
+
+    private void menuExportarTxtActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExportarTxtActionPerformed
+                                             
+        // 1. Abrimos la ventana de Windows para elegir dónde guardar
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Guardar Reporte de Simulación");
+        
+        // 2. Si el usuario le da a "Guardar"
+        int seleccion = fileChooser.showSaveDialog(this);
+        if (seleccion == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File archivoDestino = fileChooser.getSelectedFile();
+            
+            // Asegurarnos de que termine en .txt
+            if (!archivoDestino.getName().toLowerCase().endsWith(".txt")) {
+                archivoDestino = new java.io.File(archivoDestino.getParentFile(), archivoDestino.getName() + ".txt");
+            }
+            
+            // 3. Escribimos el contenido en el archivo
+            try (java.io.FileWriter escritor = new java.io.FileWriter(archivoDestino)) {
+                escritor.write("========================================\n");
+                escritor.write("   REPORTE DE SIMULACIÓN DE DISCO\n");
+                escritor.write("========================================\n\n");
+                escritor.write("Política utilizada: " + comboPoliticas.getSelectedItem().toString() + "\n");
+                
+                // Si tienes la etiqueta de estadísticas, la incluimos
+                if (lblEstadisticas != null) {
+                    escritor.write(lblEstadisticas.getText() + "\n\n");
+                }
+                
+                escritor.write("--- REGISTRO DE EVENTOS ---\n");
+                escritor.write(txtLog.getText()); // Extraemos todo lo que hay en tu cuadro de texto del log
+                
+                javax.swing.JOptionPane.showMessageDialog(this, "Reporte guardado exitosamente en:\n" + archivoDestino.getAbsolutePath());
+                
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Error al guardar el archivo: " + ex.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        }
+            // TODO add your handling code here:
+    }//GEN-LAST:event_menuExportarTxtActionPerformed
+
+    private void menuExportarCsvActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExportarCsvActionPerformed
+                                            
+        // 1. Abrimos la ventana para elegir dónde guardar
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Exportar Tabla a Excel (CSV)");
+        
+        int seleccion = fileChooser.showSaveDialog(this);
+        if (seleccion == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File archivoDestino = fileChooser.getSelectedFile();
+            
+            // Asegurarnos de que termine en .csv
+            if (!archivoDestino.getName().toLowerCase().endsWith(".csv")) {
+                archivoDestino = new java.io.File(archivoDestino.getParentFile(), archivoDestino.getName() + ".csv");
+            }
+            
+            // 2. Leemos la tabla y escribimos el archivo
+            try (java.io.PrintWriter escritor = new java.io.PrintWriter(archivoDestino)) {
+                // Obtenemos el modelo de tu tabla (Asegúrate de que se llame jTable1)
+                javax.swing.table.TableModel modelo = jTable1.getModel();
+                int columnas = modelo.getColumnCount();
+                int filas = modelo.getRowCount();
+                
+                // Escribimos los encabezados (Nombre, Bloques, etc.)
+                for (int i = 0; i < columnas; i++) {
+                    escritor.print(modelo.getColumnName(i));
+                    if (i < columnas - 1) escritor.print(","); // Separador de Excel
+                }
+                escritor.println(); // Salto de línea
+                
+                // Escribimos los datos fila por fila
+                for (int i = 0; i < filas; i++) {
+                    for (int j = 0; j < columnas; j++) {
+                        // Obtenemos el valor y lo convertimos a texto, si es nulo ponemos espacio vacío
+                        Object valor = modelo.getValueAt(i, j);
+                        escritor.print(valor != null ? valor.toString() : "");
+                        
+                        if (j < columnas - 1) escritor.print(",");
+                    }
+                    escritor.println(); // Salto de línea al terminar la fila
+                }
+                
+                javax.swing.JOptionPane.showMessageDialog(this, "Tabla exportada exitosamente a Excel en:\n" + archivoDestino.getAbsolutePath());
+                
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Error al guardar el CSV: " + ex.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        }
+            // TODO add your handling code here:
+    }//GEN-LAST:event_menuExportarCsvActionPerformed
+
+    // Este método calcula paso a paso por dónde pasará el cabezal
+    private void construirRuta(int destino) {
+        if (posicionCabezal < destino) {
+            // Si va hacia adelante
+            for (int i = posicionCabezal + 1; i <= destino; i++) {
+                rutaCompleta.add(i);
+            }
+        } else if (posicionCabezal > destino) {
+            // Si va hacia atrás
+            for (int i = posicionCabezal - 1; i >= destino; i--) {
+                rutaCompleta.add(i);
+            }
+        }
+        // Actualizamos la posición en la memoria (no visual aún)
+        posicionCabezal = destino; 
+    }
+    
+    
    private void procesarPlanificador() {
-        // 1. Validar que haya algo que procesar
         if (colaPeticiones.getSize() == 0) {
             javax.swing.JOptionPane.showMessageDialog(this, "La cola de peticiones está vacía.");
             return;
         }
 
-        String politica = comboPoliticas.getSelectedItem().toString();
+        final String politica = comboPoliticas.getSelectedItem().toString(); // 'final' para usarlo en el Timer
         int movimientosTotales = 0;
         
         agregarLog("--- INICIANDO PLANIFICADOR: " + politica + " ---");
         agregarLog("Cabezal inicia en el bloque: " + posicionCabezal);
 
+        rutaCompleta.clear(); // Limpiamos cualquier animación vieja
+
         // ==========================================
-        // 1. LÓGICA FIFO (First In, First Out)
+        // LÓGICA DE POLÍTICAS (Usando construirRuta)
         // ==========================================
         if (politica.equals("FIFO")) {
             for (int i = 0; i < colaPeticiones.getSize(); i++) {
                 OSModels.DiskRequest peticion = colaPeticiones.get(i);
                 int distancia = Math.abs(posicionCabezal - peticion.getBlockId());
                 movimientosTotales += distancia;
-                
                 agregarLog("-> [FIFO] Leyendo '" + peticion.getFileName() + "' en bloque " + peticion.getBlockId() + " (Mov: " + distancia + ")");
-                posicionCabezal = peticion.getBlockId(); 
+                construirRuta(peticion.getBlockId()); // <--- CAMBIO AQUÍ
             }
-            
-        // ==========================================
-        // 2. LÓGICA SSTF (Shortest Seek Time First)
-        // ==========================================
         } else if (politica.equals("SSTF")) {
             java.util.List<OSModels.DiskRequest> pendientes = new java.util.ArrayList<>();
             for (int i = 0; i < colaPeticiones.getSize(); i++) { pendientes.add(colaPeticiones.get(i)); }
@@ -798,65 +1055,43 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
                         indiceMasCercano = i;
                     }
                 }
-
                 OSModels.DiskRequest peticionElegida = pendientes.get(indiceMasCercano);
                 movimientosTotales += distanciaMinima;
-                
                 agregarLog("-> [SSTF] Leyendo '" + peticionElegida.getFileName() + "' en bloque " + peticionElegida.getBlockId() + " (Mov: " + distanciaMinima + ")");
-                posicionCabezal = peticionElegida.getBlockId();
+                construirRuta(peticionElegida.getBlockId()); // <--- CAMBIO AQUÍ
                 pendientes.remove(indiceMasCercano);
             }
-            
-        // ==========================================
-        // 3. LÓGICA SCAN (Algoritmo del Elevador)
-        // ==========================================
         } else if (politica.equals("SCAN")) {
-            int limiteDisco = disk.getBlocks().length - 1; // El último bloque físico del disco
-            
+            int limiteDisco = disk.getBlocks().length - 1; 
             java.util.List<OSModels.DiskRequest> derecha = new java.util.ArrayList<>();
             java.util.List<OSModels.DiskRequest> izquierda = new java.util.ArrayList<>();
 
-            // Separamos las peticiones según dónde están respecto al cabezal
             for (int i = 0; i < colaPeticiones.getSize(); i++) {
                 OSModels.DiskRequest req = colaPeticiones.get(i);
                 if (req.getBlockId() >= posicionCabezal) derecha.add(req);
                 else izquierda.add(req);
             }
-
-            // Ordenamos: Derecha sube (ascendente), Izquierda baja (descendente)
             derecha.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
             izquierda.sort((a, b) -> Integer.compare(b.getBlockId(), a.getBlockId()));
 
-            // Subimos recogiendo peticiones
             for (OSModels.DiskRequest req : derecha) {
-                int distancia = Math.abs(posicionCabezal - req.getBlockId());
-                movimientosTotales += distancia;
-                agregarLog("-> [SCAN-Sube] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
-                posicionCabezal = req.getBlockId();
+                movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
+                agregarLog("-> [SCAN-Sube] Leyendo bloque " + req.getBlockId());
+                construirRuta(req.getBlockId());
             }
-
-            // Si hay peticiones a la izquierda, el ascensor debe ir hasta el tope y rebotar
             if (!izquierda.isEmpty()) {
-                int distAlFinal = Math.abs(posicionCabezal - limiteDisco);
-                movimientosTotales += distAlFinal;
-                agregarLog("-> [SCAN] Toca el fondo del disco (Bloque " + limiteDisco + ") (Mov: " + distAlFinal + ")");
-                posicionCabezal = limiteDisco;
+                movimientosTotales += Math.abs(posicionCabezal - limiteDisco);
+                agregarLog("-> [SCAN] Toca el fondo del disco (Bloque " + limiteDisco + ")");
+                construirRuta(limiteDisco);
 
-                // Bajamos recogiendo el resto
                 for (OSModels.DiskRequest req : izquierda) {
-                    int distancia = Math.abs(posicionCabezal - req.getBlockId());
-                    movimientosTotales += distancia;
-                    agregarLog("-> [SCAN-Baja] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
-                    posicionCabezal = req.getBlockId();
+                    movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
+                    agregarLog("-> [SCAN-Baja] Leyendo bloque " + req.getBlockId());
+                    construirRuta(req.getBlockId());
                 }
             }
-            
-        // ==========================================
-        // 4. LÓGICA C-SCAN (Elevador Circular)
-        // ==========================================
         } else if (politica.equals("C-SCAN")) {
             int limiteDisco = disk.getBlocks().length - 1; 
-            
             java.util.List<OSModels.DiskRequest> derecha = new java.util.ArrayList<>();
             java.util.List<OSModels.DiskRequest> izquierda = new java.util.ArrayList<>();
 
@@ -865,49 +1100,59 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
                 if (req.getBlockId() >= posicionCabezal) derecha.add(req);
                 else izquierda.add(req);
             }
-
-            // En C-SCAN TODO se lee de subida (ascendente)
             derecha.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
             izquierda.sort((a, b) -> Integer.compare(a.getBlockId(), b.getBlockId()));
 
             for (OSModels.DiskRequest req : derecha) {
-                int distancia = Math.abs(posicionCabezal - req.getBlockId());
-                movimientosTotales += distancia;
-                agregarLog("-> [C-SCAN] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
-                posicionCabezal = req.getBlockId();
+                movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
+                agregarLog("-> [C-SCAN] Leyendo bloque " + req.getBlockId());
+                construirRuta(req.getBlockId());
             }
-
             if (!izquierda.isEmpty()) {
-                // Toca el final
                 movimientosTotales += Math.abs(posicionCabezal - limiteDisco);
-                agregarLog("-> [C-SCAN] Toca el final del disco (Bloque " + limiteDisco + ")");
-                
-                // Salto brusco al inicio (bloque 0)
+                construirRuta(limiteDisco);
                 movimientosTotales += limiteDisco; 
-                posicionCabezal = 0;
                 agregarLog("-> [C-SCAN] Salta al inicio del disco (Bloque 0)");
-
-                // Vuelve a subir recogiendo las que faltaban
+                construirRuta(0); // Regresa rápido al inicio
                 for (OSModels.DiskRequest req : izquierda) {
-                    int distancia = Math.abs(posicionCabezal - req.getBlockId());
-                    movimientosTotales += distancia;
-                    agregarLog("-> [C-SCAN] Leyendo '" + req.getFileName() + "' en bloque " + req.getBlockId() + " (Mov: " + distancia + ")");
-                    posicionCabezal = req.getBlockId();
+                    movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
+                    agregarLog("-> [C-SCAN] Leyendo bloque " + req.getBlockId());
+                    construirRuta(req.getBlockId());
                 }
             }
         }
 
         // ==========================================
-        // 5. RESUMEN Y LIMPIEZA
+        // RESUMEN Y ANIMACIÓN (EL TIMER)
         // ==========================================
         agregarLog("TOTAL DE BLOQUES RECORRIDOS: " + movimientosTotales);
-        agregarLog("--- FIN DEL PROCESAMIENTO ---");
+        
+        // Actualizamos estadísticas
+        double promedio = (double) movimientosTotales / colaPeticiones.getSize();
+        lblEstadisticas.setText(String.format("Tiempo Promedio: %.2f blq/pet", promedio));
         
         colaPeticiones = new DataStructures.LinkedList<>(); 
         actualizarColaVisual();
         
-        lblCabeza.setText("Cabeza: " + posicionCabezal);
-        actualizarDiscoVisual();
+        // ¡ARRANCAMOS EL TIMER!
+        pasoActual = 0;
+        if (timerAnimacion != null && timerAnimacion.isRunning()) { timerAnimacion.stop(); }
+
+        timerAnimacion = new javax.swing.Timer(sliderVelocidad.getValue(), new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (pasoActual < rutaCompleta.size()) {
+                    posicionCabezal = rutaCompleta.get(pasoActual); // El cuadro rojo avanza
+                    lblCabeza.setText("Cabeza: " + posicionCabezal);
+                    actualizarDiscoVisual(); 
+                    pasoActual++;
+                } else {
+                    timerAnimacion.stop();
+                    javax.swing.JOptionPane.showMessageDialog(null, "¡Planificación terminada!");
+                }
+            }
+        });
+        timerAnimacion.start();
     }
     
     /**
@@ -939,6 +1184,8 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnLeer;
+    private javax.swing.JButton btnPausa;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JComboBox<String> comboPoliticas;
     private javax.swing.JButton jButton1;
@@ -949,6 +1196,9 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     private javax.swing.JButton jButton6;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -960,9 +1210,14 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
     private javax.swing.JTree jTreeArchivos;
     private javax.swing.JLabel lblCabeza;
     private javax.swing.JLabel lblCiclo;
+    private javax.swing.JLabel lblEstadisticas;
+    private javax.swing.JLabel lblVelocidad;
+    private javax.swing.JMenuItem menuExportarCsv;
+    private javax.swing.JMenuItem menuExportarTxt;
     private javax.swing.JPanel panelDiscoVirtual;
     private javax.swing.JRadioButton radioAdmin;
     private javax.swing.JRadioButton radioUsuario;
+    private javax.swing.JSlider sliderVelocidad;
     private javax.swing.JScrollPane tablaAsignacion;
     private javax.swing.JTextArea txtCola;
     private javax.swing.JTextArea txtLog;
