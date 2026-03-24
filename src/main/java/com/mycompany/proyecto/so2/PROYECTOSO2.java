@@ -1,16 +1,19 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
-
 package com.mycompany.proyecto.so2;
 
+// Importamos nuestra ventana desde el paquete Views
+import Views.Dashboard;
+
 /**
- *
  * @author Luigi Lauricella & Sebastian Gonzalez
  */
 public class PROYECTOSO2 {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        // Le decimos a Java que inicie nuestra interfaz gráfica
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new Dashboard().setVisible(true);
+            }
+        });
     }
 }
