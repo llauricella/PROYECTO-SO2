@@ -2,7 +2,7 @@ package OSModels;
 
 /**
  *
- * @author sebas
+ * @author Luigi Lauricella & Sebastián González
  */
 public class DiskRequest {
     private String fileName;

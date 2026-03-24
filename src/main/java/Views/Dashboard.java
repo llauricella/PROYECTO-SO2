@@ -1,6 +1,6 @@
 package Views;
 
-// --- 1. IMPORTACIONES NECESARIAS (SIN JAVA.UTIL.* PARA COLECCIONES) ---
+// IMPORTACIONES
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.table.DefaultTableModel;
@@ -12,11 +12,11 @@ import DataStructures.LinkedList;
 
 /**
  *
- * @author sebas
+ * @author Luigi Lauricella & Sebastián González
  */
-public class Dahsboard extends javax.swing.JFrame {
+public class Dashboard extends javax.swing.JFrame {
     
-    // --- 2. NUESTRAS VARIABLES GLOBALES ---
+    // VARIABLES GLOBALES
     private VirtualDisk disk;
     private FileSystemManager fsManager;
     private DefaultTableModel modeloTabla;
@@ -29,23 +29,20 @@ public class Dahsboard extends javax.swing.JFrame {
     private int pasoActual = 0;
 
     /**
-     * Creates new form Dahsboard
+     * Creates new form Dashboard
      */
-    public Dahsboard() {
-        initComponents(); // ESTO NO SE TOCA (Carga la interfaz gráfica)
+    public Dashboard() {
+        initComponents();
         
-        // --- 3. INICIAR NUESTRO SISTEMA ---
+        // Inicializacion
         this.setLocationRelativeTo(null); // Centrar la ventana en la pantalla al abrir
         inicializarSistema();
         configurarComponentesVisuales();
         actualizarArbolVisual();
         actualizarDiscoVisual();
     }
-
-    // ==========================================
-    //        4. MÉTODOS DE CONFIGURACIÓN
-    // ==========================================
-
+    
+    // MÉTODOS DE CONFIGURACIÓN
     private void inicializarSistema() {
         disk = new VirtualDisk(100);
         fsManager = new FileSystemManager(disk);
@@ -221,10 +218,7 @@ public class Dahsboard extends javax.swing.JFrame {
         return false;
     }
     
-    // ==========================================
-    //        6. MÉTODOS DE MONITOREO (LOGS)
-    // ==========================================
-
+    // MÉTODOS DE MONITOREO (LOGS)
     public void agregarLog(String mensaje) {
         java.time.LocalTime horaActual = java.time.LocalTime.now();
         java.time.format.DateTimeFormatter formato = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -277,9 +271,11 @@ public class Dahsboard extends javax.swing.JFrame {
         lblEstadisticas = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        menuGuardarJSON = new javax.swing.JMenuItem();
+        menuCargarJSON = new javax.swing.JMenuItem();
+        jMenu2 = new javax.swing.JMenu();
         menuExportarTxt = new javax.swing.JMenuItem();
         menuExportarCsv = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -521,17 +517,26 @@ public class Dahsboard extends javax.swing.JFrame {
 
         jMenu1.setText("Archivo");
 
-        menuExportarTxt.setText("Exportar Resumen del Sistema (.txt)");
-        menuExportarTxt.addActionListener(this::menuExportarTxtActionPerformed);
-        jMenu1.add(menuExportarTxt);
+        menuGuardarJSON.setText("Guardar Estado del sistema (.json)");
+        menuGuardarJSON.addActionListener(this::menuGuardarJSONActionPerformed);
+        jMenu1.add(menuGuardarJSON);
 
-        menuExportarCsv.setText("Exportar Estadísticas Procesos (.csv)");
-        menuExportarCsv.addActionListener(this::menuExportarCsvActionPerformed);
-        jMenu1.add(menuExportarCsv);
+        menuCargarJSON.setText("Cargar Estado del sistema (.json)");
+        menuCargarJSON.addActionListener(this::menuCargarJSONActionPerformed);
+        jMenu1.add(menuCargarJSON);
 
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Reportes");
+
+        menuExportarTxt.setText("Exportar Resumen del Sistema (.txt)");
+        menuExportarTxt.addActionListener(this::menuExportarTxtActionPerformed);
+        jMenu2.add(menuExportarTxt);
+
+        menuExportarCsv.setText("Exportar Estadísticas Procesos (.csv)");
+        menuExportarCsv.addActionListener(this::menuExportarCsvActionPerformed);
+        jMenu2.add(menuExportarCsv);
+
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -574,7 +579,7 @@ public class Dahsboard extends javax.swing.JFrame {
                     .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, 232, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -594,7 +599,7 @@ public class Dahsboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-try {
+        try {
             TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
             if (carpetaDestino == null) {
                 carpetaDestino = fsManager.getRoot();
@@ -643,11 +648,11 @@ try {
         } catch (NumberFormatException ex) {
             javax.swing.JOptionPane.showMessageDialog(this, "Por favor, ingresa un número válido para el tamaño.");
         
-        }      // TODO add your handling code here:
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
+    TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
         if (carpetaDestino == null) carpetaDestino = fsManager.getRoot();
 
         if (!carpetaDestino.getData().isDirectory()) {
@@ -667,7 +672,7 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
         } else {
             javax.swing.JOptionPane.showMessageDialog(this, "Error al crear la carpeta.");
         
-        }     // TODO add your handling code here:
+        }
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
@@ -707,8 +712,6 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
                  javax.swing.JOptionPane.showMessageDialog(this, "No tienes permisos de Administrador.");
             }
         }
-    
- // TODO add your handling code here:
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
@@ -740,9 +743,6 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
                  javax.swing.JOptionPane.showMessageDialog(this, "No tienes permisos de Administrador para eliminar.");
             }
         }
-    
-    
-    // TODO add your handling code here:
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -761,25 +761,21 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
         
         actualizarColaVisual();
         agregarLog("PETICIÓN RECIBIDA: El archivo '" + fd.getName() + "' solicita el bloque " + fd.getStartBlockId());
-    
-            // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
 
-   procesarPlanificador();
-        // TODO add your handling code here:
+    procesarPlanificador();
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void radioUsuarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioUsuarioActionPerformed
                                             
- fsManager.setAdminMode(false);
+    fsManager.setAdminMode(false);
         jButton2.setEnabled(false); 
         jButton3.setEnabled(false); 
         jButton4.setEnabled(false); 
         jButton5.setEnabled(false); 
         agregarLog("Cambiado a Modo USUARIO: Permisos de escritura revocados.");
-        // TODO add your handling code here:
     }//GEN-LAST:event_radioUsuarioActionPerformed
 
     private void radioAdminActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioAdminActionPerformed
@@ -790,7 +786,6 @@ TreeNode<FileDescriptor> carpetaDestino = obtenerNodoSeleccionado();
         jButton4.setEnabled(true); 
         jButton5.setEnabled(true); 
         agregarLog("Cambiado a Modo ADMINISTRADOR: Todos los permisos concedidos.");
-        // TODO add your handling code here:
     }//GEN-LAST:event_radioAdminActionPerformed
 
     private void btnLeerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLeerActionPerformed
@@ -822,8 +817,6 @@ javax.swing.tree.DefaultMutableTreeNode nodoSeleccionado =
         } else {
             javax.swing.JOptionPane.showMessageDialog(this, "No se encontraron datos de este archivo en el disco.");
         }
-    
-        // TODO add your handling code here:
     }//GEN-LAST:event_btnLeerActionPerformed
 
     private void btnPausaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPausaActionPerformed
@@ -836,13 +829,10 @@ if (timerAnimacion != null) {
                  btnPausa.setText("Pausar");
              }
          }
-    
-// TODO add your handling code here:
     }//GEN-LAST:event_btnPausaActionPerformed
 
     private void sliderVelocidadStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderVelocidadStateChanged
-                                            
-      int valor = sliderVelocidad.getValue();
+    int valor = sliderVelocidad.getValue();
         if (timerAnimacion != null) {
             timerAnimacion.setDelay(valor);
         }
@@ -853,13 +843,10 @@ if (timerAnimacion != null) {
             else if (valor <= 500) lblVelocidad.setText("Velocidad: Normal (x1)");
             else lblVelocidad.setText("Velocidad: Lenta (x0.5)");
         }
-    
-// TODO add your handling code here:
     }//GEN-LAST:event_sliderVelocidadStateChanged
 
     private void menuExportarTxtActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExportarTxtActionPerformed
-                                             
-   javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
         fileChooser.setDialogTitle("Guardar Reporte de Simulación");
         
         if (fileChooser.showSaveDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
@@ -881,13 +868,10 @@ if (timerAnimacion != null) {
                 javax.swing.JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             }
         }
-    
-            // TODO add your handling code here:
     }//GEN-LAST:event_menuExportarTxtActionPerformed
 
     private void menuExportarCsvActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuExportarCsvActionPerformed
-                                            
-        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+    javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
         fileChooser.setDialogTitle("Exportar Tabla a Excel (CSV)");
         
         if (fileChooser.showSaveDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
@@ -920,8 +904,143 @@ if (timerAnimacion != null) {
                 javax.swing.JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             }
         }
-            // TODO add your handling code here:
     }//GEN-LAST:event_menuExportarCsvActionPerformed
+
+    private void menuGuardarJSONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuGuardarJSONActionPerformed
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Guardar Estado del Disco a JSON");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos JSON (*.json)", "json"));
+
+        if (fileChooser.showSaveDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File archivoDestino = fileChooser.getSelectedFile();
+            
+            if (!archivoDestino.getName().toLowerCase().endsWith(".json")) {
+                archivoDestino = new java.io.File(archivoDestino.getParentFile(), archivoDestino.getName() + ".json");
+            }
+
+            try {
+                String testId = javax.swing.JOptionPane.showInputDialog(this, "Ingresa un ID para esta prueba (Ej. P1):", "P1");
+                if (testId == null || testId.trim().isEmpty()) testId = "Export_01";
+
+                org.json.JSONObject jsonRaiz = new org.json.JSONObject();
+                jsonRaiz.put("test_id", testId);
+                jsonRaiz.put("initial_head", posicionCabezal);
+
+                // 1. Guardar peticiones
+                org.json.JSONArray requestsArray = new org.json.JSONArray();
+                for (int i = 0; i < colaPeticiones.getSize(); i++) {
+                    OSModels.DiskRequest req = colaPeticiones.get(i);
+                    org.json.JSONObject reqObj = new org.json.JSONObject();
+                    reqObj.put("pos", req.getBlockId());
+                    reqObj.put("op", "READ"); // Asumiendo READ por defecto, cámbialo si tu modelo guarda la operación
+                    requestsArray.put(reqObj);
+                }
+                jsonRaiz.put("requests", requestsArray);
+
+                // 2. Guardar archivos del disco
+                org.json.JSONObject systemFilesObj = new org.json.JSONObject();
+                java.util.HashMap<String, Integer> tamanoArchivos = new java.util.HashMap<>();
+                java.util.HashMap<String, Integer> inicioArchivos = new java.util.HashMap<>();
+                
+                OSModels.DiskBlock[] bloques = disk.getBlocks();
+                for (int i = 0; i < disk.getTotalBlocks(); i++) {
+                    if (!bloques[i].isIsFree() && bloques[i].getOwnerFile() != null) {
+                        String nombreArchivo = bloques[i].getOwnerFile();
+                        tamanoArchivos.put(nombreArchivo, tamanoArchivos.getOrDefault(nombreArchivo, 0) + 1);
+                        if (!inicioArchivos.containsKey(nombreArchivo)) {
+                            inicioArchivos.put(nombreArchivo, i);
+                        }
+                    }
+                }
+
+                for (String nombreArchivo : inicioArchivos.keySet()) {
+                    org.json.JSONObject fileObj = new org.json.JSONObject();
+                    fileObj.put("name", nombreArchivo);
+                    fileObj.put("blocks", tamanoArchivos.get(nombreArchivo));
+                    systemFilesObj.put(String.valueOf(inicioArchivos.get(nombreArchivo)), fileObj);
+                }
+                jsonRaiz.put("system_files", systemFilesObj);
+
+                // 3. Escribir el archivo
+                try (java.io.FileWriter escritor = new java.io.FileWriter(archivoDestino)) {
+                    escritor.write(jsonRaiz.toString(2)); // El '2' tabula el JSON para que sea legible
+                }
+
+                javax.swing.JOptionPane.showMessageDialog(this, "Archivo JSON guardado exitosamente en:\n" + archivoDestino.getAbsolutePath());
+                agregarLog("Estado guardado en JSON: " + archivoDestino.getName());
+
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Error al guardar el JSON: " + ex.getMessage(), "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_menuGuardarJSONActionPerformed
+
+    private void menuCargarJSONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuCargarJSONActionPerformed
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Cargar Prueba JSON");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos JSON (*.json)", "json"));
+
+        if (fileChooser.showOpenDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File archivoJson = fileChooser.getSelectedFile();
+            
+            try {
+                // 1. Leer archivo
+                String contenido = new String(java.nio.file.Files.readAllBytes(archivoJson.toPath()));
+                org.json.JSONObject json = new org.json.JSONObject(contenido);
+                
+                // 2. Extraer datos generales
+                String testId = json.getString("test_id");
+                posicionCabezal = json.getInt("initial_head");
+                if (lblCabeza != null) lblCabeza.setText("Cabeza: " + posicionCabezal);
+                
+                // 3. Crear archivos en el disco
+                org.json.JSONObject systemFiles = json.getJSONObject("system_files");
+                TreeNode<FileDescriptor> raiz = fsManager.getRoot();
+                String[] colores = {"#FF5733", "#33FF57", "#3357FF", "#FF33A8", "#F3FF33", "#33FFF3", "#8D33FF"};
+                
+                java.util.Iterator<String> keys = systemFiles.keys();
+                while(keys.hasNext()) {
+                    String posBlockStr = keys.next();
+                    org.json.JSONObject fileData = systemFiles.getJSONObject(posBlockStr);
+                    
+                    String nombreArchivo = fileData.getString("name");
+                    int cantidadBloques = fileData.getInt("blocks");
+                    String colorAleatorio = colores[(int)(Math.random() * colores.length)];
+                    
+                    fsManager.createFile(raiz, nombreArchivo, cantidadBloques, colorAleatorio);
+                }
+                
+                // 4. Cargar peticiones
+                org.json.JSONArray requests = json.getJSONArray("requests");
+                colaPeticiones = new DataStructures.LinkedList<>(); // Reseteamos la cola
+                
+                for (int i = 0; i < requests.length(); i++) {
+                    org.json.JSONObject req = requests.getJSONObject(i);
+                    int posDestino = req.getInt("pos");
+                    String operacion = req.getString("op");
+                    
+                    String fileName = "Desconocido"; 
+                    if (systemFiles.has(String.valueOf(posDestino))) {
+                        fileName = systemFiles.getJSONObject(String.valueOf(posDestino)).getString("name");
+                    }
+                    
+                    colaPeticiones.add(new OSModels.DiskRequest(fileName, posDestino, operacion));
+                }
+                
+                // 5. Actualizar interfaz
+                actualizarArbolVisual();
+                actualizarTabla();
+                actualizarDiscoVisual();
+                actualizarColaVisual();
+                
+                agregarLog(">>> PRUEBA JSON CARGADA ÉXITOSAMENTE: " + testId + " <<<");
+                javax.swing.JOptionPane.showMessageDialog(this, "Prueba '" + testId + "' cargada correctamente.");
+                
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Hubo un error al leer el archivo JSON.\n" + ex.getMessage(), "Error de Carga", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_menuCargarJSONActionPerformed
 
     // Este método calcula paso a paso por dónde pasará el cabezal
   private void construirRuta(int destino) {
@@ -937,9 +1056,6 @@ if (timerAnimacion != null) {
         posicionCabezal = destino; 
     }
 
-    // =======================================================
-    // MÉTODO DE ORDENAMIENTO MANUAL (CERO COLLECTIONS.SORT)
-    // =======================================================
     private OSModels.DiskRequest[] convertirAArreglo(DataStructures.LinkedList<OSModels.DiskRequest> lista) {
         OSModels.DiskRequest[] arr = new OSModels.DiskRequest[lista.getSize()];
         for(int i = 0; i < lista.getSize(); i++) arr[i] = lista.get(i);
@@ -960,43 +1076,45 @@ if (timerAnimacion != null) {
             }
         }
     }
-    
-    // =======================================================
-    //        LÓGICA REAL DEL PLANIFICADOR 100% LEGAL
-    // =======================================================
     private void procesarPlanificador() {
+        // 1. Verificamos que existan peticiones pendientes antes de iniciar
         if (colaPeticiones.getSize() == 0) {
             javax.swing.JOptionPane.showMessageDialog(this, "La cola de peticiones está vacía.");
             return;
         }
 
+        // 2. Solicitamos la posición inicial del cabezal de lectura/escritura
         String posStr = javax.swing.JOptionPane.showInputDialog(this, 
             "Ingrese la posición inicial del cabezal (0 - 99):", "0");
-        if (posStr == null || posStr.trim().isEmpty()) return; // Si cancela, no hacemos nada
+        if (posStr == null || posStr.trim().isEmpty()) return; // Si el usuario cancela, abortamos
         
         try {
+            // Validamos que la entrada sea numérica y esté dentro de los límites físicos del disco virtual
             posicionCabezal = Integer.parseInt(posStr);
             if (posicionCabezal < 0 || posicionCabezal >= disk.getTotalBlocks()) {
                 javax.swing.JOptionPane.showMessageDialog(this, "Error: La posición debe estar entre 0 y 99.");
                 return;
             }
             lblCabeza.setText("Cabeza: " + posicionCabezal);
-            actualizarDiscoVisual(); // Refrescamos para que el cuadro rojo se mueva al inicio
+            actualizarDiscoVisual(); // Refrescamos la GUI para posicionar el cabezal
         } catch (NumberFormatException ex) {
             javax.swing.JOptionPane.showMessageDialog(this, "Debe ingresar un número válido.");
             return;
         }
         
+        // 3. Obtenemos la política elegida y preparamos las variables de rastreo
         final String politica = comboPoliticas.getSelectedItem().toString(); 
         int movimientosTotales = 0;
         
         agregarLog("--- INICIANDO PLANIFICADOR: " + politica + " ---");
         agregarLog("Cabezal inicia en el bloque: " + posicionCabezal);
 
-        // Limpiamos la lista instanciando una nueva propia tuya
+        // Instanciamos una nueva lista propia para guardar la interpolación de los pasos
         rutaCompleta = new DataStructures.LinkedList<>(); 
 
+        // LÓGICA DE ALGORITMOS DE PLANIFICACIÓN
         if (politica.equals("FIFO")) {
+            // Algoritmo FIFO: Atiende estrictamente en orden de llegada
             for (int i = 0; i < colaPeticiones.getSize(); i++) {
                 OSModels.DiskRequest peticion = colaPeticiones.get(i);
                 int distancia = Math.abs(posicionCabezal - peticion.getBlockId());
@@ -1007,15 +1125,16 @@ if (timerAnimacion != null) {
         } 
         
         else if (politica.equals("SSTF")) {
-            // Lógica sin usar .remove() sobre colecciones
+            // Algoritmo SSTF: Busca siempre la petición con el menor tiempo de búsqueda (distancia)
             int n = colaPeticiones.getSize();
-            boolean[] procesado = new boolean[n];
+            boolean[] procesado = new boolean[n]; // Arreglo para marcar peticiones ya visitadas sin usar .remove()
             int peticionesRestantes = n;
 
             while (peticionesRestantes > 0) {
                 int indiceMasCercano = -1;
                 int distanciaMinima = Integer.MAX_VALUE;
 
+                // Buscamos linealmente la petición no visitada más cercana a la posición actual
                 for (int i = 0; i < n; i++) {
                     if (!procesado[i]) {
                         int distancia = Math.abs(posicionCabezal - colaPeticiones.get(i).getBlockId());
@@ -1025,7 +1144,8 @@ if (timerAnimacion != null) {
                         }
                     }
                 }
-                procesado[indiceMasCercano] = true;
+                
+                procesado[indiceMasCercano] = true; // Marcamos como visitada
                 peticionesRestantes--;
                 
                 OSModels.DiskRequest peticionElegida = colaPeticiones.get(indiceMasCercano);
@@ -1036,34 +1156,41 @@ if (timerAnimacion != null) {
         } 
         
         else if (politica.equals("SCAN")) {
+            // Algoritmo SCAN (Ascensor): Sube hasta el límite superior y luego baja
             int limiteDisco = disk.getBlocks().length - 1; 
             DataStructures.LinkedList<OSModels.DiskRequest> derecha = new DataStructures.LinkedList<>();
             DataStructures.LinkedList<OSModels.DiskRequest> izquierda = new DataStructures.LinkedList<>();
 
+            // Segmentamos las peticiones respecto a la posición actual del cabezal
             for (int i = 0; i < colaPeticiones.getSize(); i++) {
                 OSModels.DiskRequest req = colaPeticiones.get(i);
                 if (req.getBlockId() >= posicionCabezal) derecha.add(req);
                 else izquierda.add(req);
             }
             
-            // Usamos nuestro ordenamiento legal
+            // Convertimos a arreglos estáticos para poder ordenarlos manualmente
             OSModels.DiskRequest[] arrDerecha = convertirAArreglo(derecha);
             OSModels.DiskRequest[] arrIzquierda = convertirAArreglo(izquierda);
 
-            ordenarArregloPeticiones(arrDerecha, true);  // Ascendente
-            ordenarArregloPeticiones(arrIzquierda, false); // Descendente
+            // Ordenamos: Ascendente para la ida, Descendente para el retorno
+            ordenarArregloPeticiones(arrDerecha, true);  
+            ordenarArregloPeticiones(arrIzquierda, false); 
 
+            // Recorrido de subida (hacia el final del disco)
             for (int i = 0; i < arrDerecha.length; i++) {
                 OSModels.DiskRequest req = arrDerecha[i];
                 movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
                 agregarLog("-> [SCAN-Sube] Leyendo bloque " + req.getBlockId());
                 construirRuta(req.getBlockId());
             }
+            
+            // Si hay peticiones a la izquierda, debemos tocar el fondo del disco antes de regresar
             if (arrIzquierda.length > 0) {
                 movimientosTotales += Math.abs(posicionCabezal - limiteDisco);
                 agregarLog("-> [SCAN] Toca el fondo del disco (Bloque " + limiteDisco + ")");
                 construirRuta(limiteDisco);
 
+                // Recorrido de bajada
                 for (int i = 0; i < arrIzquierda.length; i++) {
                     OSModels.DiskRequest req = arrIzquierda[i];
                     movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
@@ -1074,6 +1201,7 @@ if (timerAnimacion != null) {
         } 
         
         else if (politica.equals("C-SCAN")) {
+            // Algoritmo C-SCAN: Flujo unidireccional. Sube hasta el final, salta al inicio y vuelve a subir
             int limiteDisco = disk.getBlocks().length - 1; 
             DataStructures.LinkedList<OSModels.DiskRequest> derecha = new DataStructures.LinkedList<>();
             DataStructures.LinkedList<OSModels.DiskRequest> izquierda = new DataStructures.LinkedList<>();
@@ -1087,22 +1215,29 @@ if (timerAnimacion != null) {
             OSModels.DiskRequest[] arrDerecha = convertirAArreglo(derecha);
             OSModels.DiskRequest[] arrIzquierda = convertirAArreglo(izquierda);
 
-            ordenarArregloPeticiones(arrDerecha, true);   // Ascendente
-            ordenarArregloPeticiones(arrIzquierda, true);  // Ascendente (¡Vuelve a subir!)
+            // En C-SCAN ambos arreglos se ordenan de forma ascendente
+            ordenarArregloPeticiones(arrDerecha, true);   
+            ordenarArregloPeticiones(arrIzquierda, true);  
 
+            // Recorrido de subida inicial
             for (int i = 0; i < arrDerecha.length; i++) {
                 OSModels.DiskRequest req = arrDerecha[i];
                 movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
                 agregarLog("-> [C-SCAN] Leyendo bloque " + req.getBlockId());
                 construirRuta(req.getBlockId());
             }
+            
             if (arrIzquierda.length > 0) {
+                // Toca el final del disco
                 movimientosTotales += Math.abs(posicionCabezal - limiteDisco);
                 construirRuta(limiteDisco);
+                
+                // Salto brusco al bloque 0 (retorno sin lectura)
                 movimientosTotales += limiteDisco; 
                 agregarLog("-> [C-SCAN] Salta al inicio del disco (Bloque 0)");
-                construirRuta(0); // Regresa rápido al inicio
+                construirRuta(0); 
                 
+                // Segundo recorrido de subida desde el inicio
                 for (int i = 0; i < arrIzquierda.length; i++) {
                     OSModels.DiskRequest req = arrIzquierda[i];
                     movimientosTotales += Math.abs(posicionCabezal - req.getBlockId());
@@ -1112,24 +1247,27 @@ if (timerAnimacion != null) {
             }
         }
 
-        // ==========================================
-        // RESUMEN Y ANIMACIÓN (EL TIMER)
-        // ==========================================
+        // CONFIGURACIÓN DE LA ANIMACIÓN
         agregarLog("TOTAL DE BLOQUES RECORRIDOS: " + movimientosTotales);
         
+        // Calculamos el rendimiento (Seek Time promedio)
         double promedio = (double) movimientosTotales / colaPeticiones.getSize();
         lblEstadisticas.setText(String.format("Tiempo Promedio: %.2f blq/pet", promedio));
         
+        // Vaciamos la cola lógicamente y actualizamos la interfaz gráfica
         colaPeticiones = new DataStructures.LinkedList<>(); 
         actualizarColaVisual();
         
         pasoActual = 0;
+        
+        // Detenemos cualquier animación previa en curso
         if (timerAnimacion != null && timerAnimacion.isRunning()) { timerAnimacion.stop(); }
 
+        // Iniciamos el temporizador que consumirá la 'rutaCompleta' para animar el disco
         timerAnimacion = new javax.swing.Timer(sliderVelocidad.getValue(), new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                if (pasoActual < rutaCompleta.getSize()) { // CORREGIDO PARA TU LINKEDLIST
+                if (pasoActual < rutaCompleta.getSize()) { 
                     posicionCabezal = rutaCompleta.get(pasoActual); 
                     lblCabeza.setText("Cabeza: " + posicionCabezal);
                     actualizarDiscoVisual(); 
@@ -1160,15 +1298,19 @@ if (timerAnimacion != null) {
                 }
             }
         } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Dahsboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(Dashboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
         //</editor-fold>
         //</editor-fold>
         //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Dahsboard().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new Dashboard().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1200,8 +1342,10 @@ if (timerAnimacion != null) {
     private javax.swing.JLabel lblCiclo;
     private javax.swing.JLabel lblEstadisticas;
     private javax.swing.JLabel lblVelocidad;
+    private javax.swing.JMenuItem menuCargarJSON;
     private javax.swing.JMenuItem menuExportarCsv;
     private javax.swing.JMenuItem menuExportarTxt;
+    private javax.swing.JMenuItem menuGuardarJSON;
     private javax.swing.JPanel panelDiscoVirtual;
     private javax.swing.JRadioButton radioAdmin;
     private javax.swing.JRadioButton radioUsuario;

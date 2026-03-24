@@ -1,13 +1,10 @@
 package OSModels;
 
-/**
- *
- * @author sebas
- */
 
 /**
  * Simulación del Disco Duro (SD).
  * Gestiona el espacio libre, la fragmentación y la asignación encadenada.
+ * @author Luigi Lauricella & Sebastián González
  */
 public class VirtualDisk {
     private DiskBlock[] blocks;

@@ -5,6 +5,9 @@
 package OSModels;
 import DataStructures.TreeNode;
 
+/**
+* @author Luigi Lauricella & Sebastián González
+*/
 public class JournalEntry {
     private String transactionId;
     private String operation; // "CREATE" o "DELETE"

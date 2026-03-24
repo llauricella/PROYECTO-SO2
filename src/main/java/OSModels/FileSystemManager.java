@@ -6,7 +6,7 @@ import DataStructures.LinkedList;
 /**
  * Controlador principal del Sistema de Archivos.
  * Conecta la estructura jerárquica (Árbol) con el Disco Virtual (SD).
- * @author sebas
+ * @author Luigi Lauricella & Sebastián González
  */
 public class FileSystemManager {
     private TreeNode<FileDescriptor> root; 

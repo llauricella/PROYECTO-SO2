@@ -6,7 +6,7 @@ package DataStructures;
 
 /**
  *
- * @author Luigi Lauricella
+ * @author Luigi Lauricella & Sebastián González
  * @param <T>
  */
 public class LinkedList<T> {
