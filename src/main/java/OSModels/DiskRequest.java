@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package OSModels;
 
 /**
@@ -9,7 +5,7 @@ package OSModels;
  * @author sebas
  */
 public class DiskRequest {
-     private String fileName;
+    private String fileName;
     private int blockId;
     private String type; 
 
@@ -19,11 +15,18 @@ public class DiskRequest {
         this.type = type;
     }
 
+    // --- GETTERS Y SETTERS ---
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+    
+    public int getBlockId() { return blockId; }
+    public void setBlockId(int blockId) { this.blockId = blockId; }
+    
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
     @Override
     public String toString() {
         return "[" + type + "] " + fileName + " (Bloque: " + blockId + ")";
     }
-
-    public int getBlockId() { return blockId; }
-    public String getFileName() { return fileName; }
 }

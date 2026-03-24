@@ -1,21 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package OSModels;
 
 import DataStructures.TreeNode;
 import DataStructures.LinkedList;
 
 /**
- *
- * @author sebas
- */
-
-
-/**
  * Controlador principal del Sistema de Archivos.
  * Conecta la estructura jerárquica (Árbol) con el Disco Virtual (SD).
+ * @author sebas
  */
 public class FileSystemManager {
     private TreeNode<FileDescriptor> root; // La raíz del sistema (Ej: "C:")
@@ -93,7 +84,8 @@ public class FileSystemManager {
             LinkedList<TreeNode<FileDescriptor>> children = nodeToDelete.getChildren();
             
             // Borramos los hijos uno por uno hasta que la carpeta quede vacía
-            while (!children.isEmpty()) {
+            // (Asumiendo que tu LinkedList actualiza su size al hacer remove)
+            while (children.getSize() > 0) {
                 TreeNode<FileDescriptor> child = children.get(0);
                 deleteNode(nodeToDelete, child); // Llamada recursiva
             }
