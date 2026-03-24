@@ -361,18 +361,18 @@ public class Dashboard extends javax.swing.JFrame {
         lblCabeza.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         lblCabeza.setText("Cabeza: 0");
 
+        radioAdmin.setBackground(new java.awt.Color(255, 255, 255));
         buttonGroup1.add(radioAdmin);
         radioAdmin.setSelected(true);
         radioAdmin.setText("Administrador");
         radioAdmin.addActionListener(this::radioAdminActionPerformed);
 
+        radioUsuario.setBackground(new java.awt.Color(255, 255, 255));
         buttonGroup1.add(radioUsuario);
         radioUsuario.setText("Usuario");
         radioUsuario.addActionListener(this::radioUsuarioActionPerformed);
 
-        sliderVelocidad.setMaximum(1000);
-        sliderVelocidad.setMinimum(50);
-        sliderVelocidad.setValue(500);
+        sliderVelocidad.setBackground(new java.awt.Color(255, 255, 255));
         sliderVelocidad.addChangeListener(this::sliderVelocidadStateChanged);
 
         btnPausa.setText("Pausar");
@@ -832,16 +832,33 @@ if (timerAnimacion != null) {
     }//GEN-LAST:event_btnPausaActionPerformed
 
     private void sliderVelocidadStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_sliderVelocidadStateChanged
-    int valor = sliderVelocidad.getValue();
-        if (timerAnimacion != null) {
-            timerAnimacion.setDelay(valor);
+    int valorSlider = sliderVelocidad.getValue();
+        int delayMilisegundos;
+        
+        // 0 a 25% (Izquierda) -> Lento
+        if (valorSlider <= 25) {
+            delayMilisegundos = 1000; // 1 segundo de pausa
+            if (lblVelocidad != null) lblVelocidad.setText("Velocidad: Lenta (x0.5)");
+        } 
+        // 26 a 50% (Centro Izquierda) -> Normal
+        else if (valorSlider <= 50) {
+            delayMilisegundos = 500;  // Medio segundo de pausa
+            if (lblVelocidad != null) lblVelocidad.setText("Velocidad: Normal (x1)");
+        } 
+        // 51 a 75% (Centro Derecha) -> Rápida
+        else if (valorSlider <= 75) {
+            delayMilisegundos = 250;  // Cuarto de segundo
+            if (lblVelocidad != null) lblVelocidad.setText("Velocidad: Rápida (x2)");
+        } 
+        // 76 a 100% (Derecha) -> Muy Rápida
+        else {
+            delayMilisegundos = 50;   // Casi instantáneo
+            if (lblVelocidad != null) lblVelocidad.setText("Velocidad: Muy Rápida (x4)");
         }
         
-        if (lblVelocidad != null) {
-            if (valor <= 50) lblVelocidad.setText("Velocidad: Muy Rápida (x4)");
-            else if (valor <= 250) lblVelocidad.setText("Velocidad: Rápida (x2)");
-            else if (valor <= 500) lblVelocidad.setText("Velocidad: Normal (x1)");
-            else lblVelocidad.setText("Velocidad: Lenta (x0.5)");
+        // Actualizamos el temporizador si ya está corriendo
+        if (timerAnimacion != null) {
+            timerAnimacion.setDelay(delayMilisegundos);
         }
     }//GEN-LAST:event_sliderVelocidadStateChanged
 
@@ -1264,7 +1281,7 @@ if (timerAnimacion != null) {
         if (timerAnimacion != null && timerAnimacion.isRunning()) { timerAnimacion.stop(); }
 
         // Iniciamos el temporizador que consumirá la 'rutaCompleta' para animar el disco
-        timerAnimacion = new javax.swing.Timer(sliderVelocidad.getValue(), new java.awt.event.ActionListener() {
+        timerAnimacion = new javax.swing.Timer(500, new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 if (pasoActual < rutaCompleta.getSize()) { 
