@@ -68,6 +68,40 @@ public class Dahsboard extends javax.swing.JFrame {
         jTable1.setModel(modeloTabla);
         
         actualizarTabla();
+        
+        // --- INYECCIÓN DEL MENÚ DEL JOURNALING (REQ 8) ---
+        jMenu2.setText("Journaling & Fallos"); // Le damos nombre al menú vacío que ya tenías
+        
+        javax.swing.JMenuItem btnFallo = new javax.swing.JMenuItem("Activar Crash (Próxima operación fallará)");
+        btnFallo.addActionListener(e -> {
+            fsManager.setSimularFallo(true);
+            javax.swing.JOptionPane.showMessageDialog(this, "MODO FALLO ACTIVADO: La próxima vez que crees un archivo, el sistema simulará una caída antes del Commit.", "Alerta de Sistema", javax.swing.JOptionPane.WARNING_MESSAGE);
+        });
+        
+        javax.swing.JMenuItem btnRecuperar = new javax.swing.JMenuItem("Reiniciar Sistema y Ejecutar UNDO");
+        btnRecuperar.addActionListener(e -> {
+            String mensajeRecovery = fsManager.recuperarSistema();
+            javax.swing.JOptionPane.showMessageDialog(this, mensajeRecovery, "Recovery Manager", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            fsManager.setSimularFallo(false); // Apagamos el modo fallo
+            actualizarArbolVisual();
+            actualizarTabla();
+            actualizarDiscoVisual();
+        });
+
+        javax.swing.JMenuItem btnVerJournal = new javax.swing.JMenuItem("Ver Registro del Journal");
+        btnVerJournal.addActionListener(e -> {
+            StringBuilder sb = new StringBuilder("--- REGISTRO DEL JOURNAL ---\n\n");
+            DataStructures.LinkedList<OSModels.JournalEntry> j = fsManager.getJournal();
+            for(int i = 0; i < j.getSize(); i++) {
+                sb.append(j.get(i).toString()).append("\n");
+            }
+            javax.swing.JOptionPane.showMessageDialog(this, sb.toString(), "Bitácora", javax.swing.JOptionPane.PLAIN_MESSAGE);
+        });
+
+        jMenu2.add(btnFallo);
+        jMenu2.add(btnRecuperar);
+        jMenu2.addSeparator();
+        jMenu2.add(btnVerJournal);
     }
 
     // ==========================================
@@ -581,7 +615,20 @@ try {
             String[] colores = {"#FF5733", "#33FF57", "#3357FF", "#FF33A8", "#F3FF33", "#33FFF3", "#8D33FF"};
             String colorAleatorio = colores[(int)(Math.random() * colores.length)];
 
-            boolean exito = fsManager.createFile(carpetaDestino, nombre, tamano, colorAleatorio);
+            boolean exito = false;
+            try {
+                exito = fsManager.createFile(carpetaDestino, nombre, tamano, colorAleatorio);
+            } catch (RuntimeException ex) {
+                if (ex.getMessage().equals("CRASH_SISTEMA")) {
+                    javax.swing.JOptionPane.showMessageDialog(this, 
+                        "¡PANTALLA AZUL! El sistema se apagó en mitad de la creación.\nLa transacción quedó PENDIENTE en el Journal.", 
+                        "Fallo Fatal", javax.swing.JOptionPane.ERROR_MESSAGE);
+                    agregarLog(">>> CRASH DEL SISTEMA AL CREAR: " + nombre + " <<<");
+                    actualizarArbolVisual();
+                    actualizarDiscoVisual();
+                    return; // Detenemos la ejecución aquí
+                }
+            }
 
             if (exito) {
                 actualizarArbolVisual();
@@ -923,6 +970,23 @@ if (timerAnimacion != null) {
             return;
         }
 
+        String posStr = javax.swing.JOptionPane.showInputDialog(this, 
+            "Ingrese la posición inicial del cabezal (0 - 99):", "0");
+        if (posStr == null || posStr.trim().isEmpty()) return; // Si cancela, no hacemos nada
+        
+        try {
+            posicionCabezal = Integer.parseInt(posStr);
+            if (posicionCabezal < 0 || posicionCabezal >= disk.getTotalBlocks()) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Error: La posición debe estar entre 0 y 99.");
+                return;
+            }
+            lblCabeza.setText("Cabeza: " + posicionCabezal);
+            actualizarDiscoVisual(); // Refrescamos para que el cuadro rojo se mueva al inicio
+        } catch (NumberFormatException ex) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Debe ingresar un número válido.");
+            return;
+        }
+        
         final String politica = comboPoliticas.getSelectedItem().toString(); 
         int movimientosTotales = 0;
         

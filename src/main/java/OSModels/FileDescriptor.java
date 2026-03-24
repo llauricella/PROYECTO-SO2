@@ -45,13 +45,20 @@ public class FileDescriptor {
     public int getSizeInBlocks() { return sizeInBlocks; }
 
     public int getStartBlockId() { return startBlockId; }
+    
+    public void setStartBlockId(int startBlockId) { this.startBlockId = startBlockId; }
 
     public String getOwner() { return owner; }
 
     public String getColorHex() { return colorHex; }
     
+    // --- MÉTODO ACTUALIZADO PARA CUMPLIR EL REQUERIMIENTO 1 ---
     @Override
     public String toString() {
-        return this.name; 
+        if (this.isDirectory) {
+            return this.name + " (Dir | Dueño: " + this.owner + ")";
+        } else {
+            return this.name + " [" + this.sizeInBlocks + " bloques] (Dueño: " + this.owner + ")";
+        }
     }
 }

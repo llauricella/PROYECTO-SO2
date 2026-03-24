@@ -9,93 +9,112 @@ import DataStructures.LinkedList;
  * @author sebas
  */
 public class FileSystemManager {
-    private TreeNode<FileDescriptor> root; // La raíz del sistema (Ej: "C:")
-    private VirtualDisk disk;              // El disco físico
-    private boolean isAdminMode;           // Requerimiento 5: Modos de usuario
+    private TreeNode<FileDescriptor> root; 
+    private VirtualDisk disk;              
+    private boolean isAdminMode;           
+
+    // --- NUEVAS VARIABLES PARA EL JOURNALING ---
+    private DataStructures.LinkedList<JournalEntry> journal;
+    private boolean simularFallo; // Switch para causar el "Crash"
 
     public FileSystemManager(VirtualDisk disk) {
         this.disk = disk;
-        this.isAdminMode = true; // Por defecto, empezamos como Administrador
+        this.isAdminMode = true; 
+        this.journal = new DataStructures.LinkedList<>();
+        this.simularFallo = false;
         
-        // Creamos la carpeta principal del sistema
         FileDescriptor rootMetadata = new FileDescriptor("Raíz", "admin");
         this.root = new TreeNode<>(rootMetadata);
     }
 
-    // --- MODO DE USUARIO (Requerimiento 5) ---
     public void setAdminMode(boolean isAdmin) { this.isAdminMode = isAdmin; }
     public boolean isAdminMode() { return isAdminMode; }
-    
     public TreeNode<FileDescriptor> getRoot() { return root; }
+    
+    // Controles del Journal
+    public void setSimularFallo(boolean simular) { this.simularFallo = simular; }
+    public boolean isSimularFallo() { return simularFallo; }
+    public DataStructures.LinkedList<JournalEntry> getJournal() { return journal; }
 
-    // ==========================================
-    //            OPERACIONES CRUD
-    // ==========================================
-
-    // --- C: CREATE (Crear Archivo) ---
+    // --- C: CREATE CON JOURNALING Y SIMULACIÓN DE FALLO ---
     public boolean createFile(TreeNode<FileDescriptor> parentFolder, String name, int sizeInBlocks, String colorHex) {
-        if (!isAdminMode) return false; // Solo admin puede crear
-        if (!parentFolder.getData().isDirectory()) return false; // El padre debe ser una carpeta
+        if (!isAdminMode || !parentFolder.getData().isDirectory()) return false;
 
-        // 1. Pedir espacio al Disco Virtual
+        // 1. Preparamos el archivo y registramos el PENDIENTE en el Journal
+        FileDescriptor newFile = new FileDescriptor(name, sizeInBlocks, -1, "admin", colorHex);
+        TreeNode<FileDescriptor> fileNode = new TreeNode<>(newFile);
+        
+        JournalEntry tx = new JournalEntry("TX-" + System.currentTimeMillis(), "CREATE", fileNode, parentFolder);
+        journal.add(tx); // Lo guardamos en la bitácora
+
+        // 2. Ejecutamos la operación real (Reserva de Disco y asignación al árbol)
         int startBlock = disk.allocateBlocks(sizeInBlocks, name, colorHex);
         if (startBlock == -1) {
-            System.out.println("Error: No hay espacio suficiente en el disco.");
+            tx.setStatus("ABORTADA (Sin Espacio)");
             return false;
         }
-
-        // 2. Crear los metadatos y el nodo para el árbol
-        FileDescriptor newFile = new FileDescriptor(name, sizeInBlocks, startBlock, "admin", colorHex);
-        TreeNode<FileDescriptor> fileNode = new TreeNode<>(newFile);
-
-        // 3. Añadir el archivo a la lista de hijos de la carpeta padre
+        fileNode.getData().setStartBlockId(startBlock); 
         parentFolder.addChild(fileNode);
+
+        // 3. ¡SIMULAMOS EL CRASH JUSTO ANTES DEL COMMIT!
+        if (simularFallo) {
+            throw new RuntimeException("CRASH_SISTEMA"); // Rompemos el sistema a propósito
+        }
+
+        // 4. Si todo salió bien, hacemos COMMIT
+        tx.setStatus("CONFIRMADA");
         return true;
     }
 
-    // --- C: CREATE (Crear Directorio) ---
     public boolean createDirectory(TreeNode<FileDescriptor> parentFolder, String name) {
-        if (!isAdminMode) return false;
-        if (!parentFolder.getData().isDirectory()) return false;
-
-        // Las carpetas no ocupan espacio en nuestro SD simulado
+        if (!isAdminMode || !parentFolder.getData().isDirectory()) return false;
         FileDescriptor newDir = new FileDescriptor(name, "admin");
-        TreeNode<FileDescriptor> dirNode = new TreeNode<>(newDir);
-        
-        parentFolder.addChild(dirNode);
+        parentFolder.addChild(new TreeNode<>(newDir));
         return true;
     }
 
-    // --- U: UPDATE (Renombrar) ---
     public boolean renameNode(TreeNode<FileDescriptor> targetNode, String newName) {
-        if (!isAdminMode) return false; // Solo admin
+        if (!isAdminMode) return false; 
         targetNode.getData().setName(newName);
         return true;
     }
 
-    // --- D: DELETE (Eliminar Archivo o Carpeta) ---
     public boolean deleteNode(TreeNode<FileDescriptor> parentFolder, TreeNode<FileDescriptor> nodeToDelete) {
-        if (!isAdminMode) return false; // Solo admin
-
+        if (!isAdminMode) return false; 
         FileDescriptor metadata = nodeToDelete.getData();
 
-        // 1. Si es un DIRECTORIO, debemos borrar todo su contenido recursivamente (Requerimiento 3)
         if (metadata.isDirectory()) {
             LinkedList<TreeNode<FileDescriptor>> children = nodeToDelete.getChildren();
-            
-            // Borramos los hijos uno por uno hasta que la carpeta quede vacía
-            // (Asumiendo que tu LinkedList actualiza su size al hacer remove)
             while (children.getSize() > 0) {
-                TreeNode<FileDescriptor> child = children.get(0);
-                deleteNode(nodeToDelete, child); // Llamada recursiva
+                deleteNode(nodeToDelete, children.get(0)); 
             }
         } else {
-            // 2. Si es un ARCHIVO, liberamos sus bloques en el Disco Virtual (SD)
             disk.freeBlocks(metadata.getStartBlockId());
         }
-
-        // 3. Finalmente, quitamos el nodo de la carpeta padre
         parentFolder.getChildren().remove(nodeToDelete);
         return true;
+    }
+
+    // --- LÓGICA DE RECOVERY (UNDO) ---
+    public String recuperarSistema() {
+        if (journal.getSize() == 0) return "Journal vacío.";
+        
+        JournalEntry ultimaTx = journal.get(journal.getSize() - 1);
+        if (ultimaTx.getStatus().equals("CONFIRMADA")) {
+            return "El sistema está estable. Última transacción fue exitosa.";
+        }
+        
+        if (ultimaTx.getStatus().equals("PENDIENTE") && ultimaTx.getOperation().equals("CREATE")) {
+            // ¡HAY UN ARCHIVO CORRUPTO! Vamos a hacer UNDO
+            ultimaTx.getParentNode().getChildren().remove(ultimaTx.getTargetNode()); // Lo quitamos del árbol
+            
+            int bloqueId = ultimaTx.getTargetNode().getData().getStartBlockId();
+            if(bloqueId != -1) {
+                disk.freeBlocks(bloqueId); // Liberamos los bloques secuestrados en el disco
+            }
+            ultimaTx.setStatus("DESHECHA (UNDO)");
+            return "Se detectó un crash en CREATE. UNDO Aplicado: Archivo borrado y bloques liberados.";
+        }
+        return "No hay transacciones pendientes de recuperar.";
     }
 }
