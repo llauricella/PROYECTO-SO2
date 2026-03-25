@@ -1,12 +1,10 @@
 package OSModels;
 
-/**
- *
- * @author Luigi Lauricella & Sebastián González
- */
+import DataStructures.RWLock;
 
 /**
  * Representa la información (metadata) de un archivo o directorio en el sistema.
+ * @author Luigi Lauricella & Sebastián González
  */
 public class FileDescriptor {
     private String name;
@@ -16,6 +14,9 @@ public class FileDescriptor {
     private String owner;     // Dueño del archivo (ej. "admin" o "usuario")
     private String colorHex;  // Color asociado para la GUI
 
+    // --- NUEVA VARIABLE PARA LA CONCURRENCIA ---
+    private RWLock lockArchivo; // Lock de Lectores/Escritores para este archivo
+
     // Constructor para Archivos
     public FileDescriptor(String name, int sizeInBlocks, int startBlockId, String owner, String colorHex) {
         this.name = name;
@@ -24,6 +25,9 @@ public class FileDescriptor {
         this.startBlockId = startBlockId;
         this.owner = owner;
         this.colorHex = colorHex;
+        
+        // Inicializamos la cerradura al crear el archivo
+        this.lockArchivo = new RWLock(); 
     }
 
     // Constructor para Directorios (Carpetas)
@@ -34,9 +38,20 @@ public class FileDescriptor {
         this.startBlockId = -1;
         this.owner = owner;
         this.colorHex = "#000000"; // Color neutro para carpetas
+        
+        // Inicializamos la cerradura también para los directorios por seguridad
+        this.lockArchivo = new RWLock(); 
     }
 
-    // --- GETTERS Y SETTERS ---
+    // --- GETTER DEL LOCK (NUEVO) ---
+    /**
+     * Devuelve el Lock asociado a este archivo para controlar su lectura/escritura.
+     */
+    public RWLock getLockArchivo() {
+        return lockArchivo;
+    }
+
+    // --- GETTERS Y SETTERS ORIGINALES ---
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

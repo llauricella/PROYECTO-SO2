@@ -2,6 +2,7 @@ package OSModels;
 
 import DataStructures.TreeNode;
 import DataStructures.LinkedList;
+import DataStructures.Semaphore;
 
 /**
  * Controlador principal del Sistema de Archivos.
@@ -11,7 +12,8 @@ import DataStructures.LinkedList;
 public class FileSystemManager {
     private TreeNode<FileDescriptor> root; 
     private VirtualDisk disk;              
-    private boolean isAdminMode;           
+    private boolean isAdminMode;  
+    private Semaphore mutexDisco;
 
     // --- NUEVAS VARIABLES PARA EL JOURNALING ---
     private DataStructures.LinkedList<JournalEntry> journal;
@@ -22,6 +24,7 @@ public class FileSystemManager {
         this.isAdminMode = true; 
         this.journal = new DataStructures.LinkedList<>();
         this.simularFallo = false;
+        this.mutexDisco = new Semaphore(1);
         
         FileDescriptor rootMetadata = new FileDescriptor("Raíz", "admin");
         this.root = new TreeNode<>(rootMetadata);
@@ -38,59 +41,103 @@ public class FileSystemManager {
 
     // --- C: CREATE CON JOURNALING Y SIMULACIÓN DE FALLO ---
     public boolean createFile(TreeNode<FileDescriptor> parentFolder, String name, int sizeInBlocks, String colorHex) {
+        // Validaciones iniciales (no requieren bloquear el disco todavía)
         if (!isAdminMode || !parentFolder.getData().isDirectory()) return false;
 
-        // 1. Preparamos el archivo y registramos el PENDIENTE en el Journal
-        FileDescriptor newFile = new FileDescriptor(name, sizeInBlocks, -1, "admin", colorHex);
-        TreeNode<FileDescriptor> fileNode = new TreeNode<>(newFile);
-        
-        JournalEntry tx = new JournalEntry("TX-" + System.currentTimeMillis(), "CREATE", fileNode, parentFolder);
-        journal.add(tx); // Lo guardamos en la bitácora
+        // 🛑 EL PROCESO PIDE PERMISO (Cerramos la puerta del disco)
+        mutexDisco.waitS(); 
 
-        // 2. Ejecutamos la operación real (Reserva de Disco y asignación al árbol)
-        int startBlock = disk.allocateBlocks(sizeInBlocks, name, colorHex);
-        if (startBlock == -1) {
-            tx.setStatus("ABORTADA (Sin Espacio)");
-            return false;
+        try {
+            // 1. Preparamos el archivo y registramos el PENDIENTE en el Journal
+            FileDescriptor newFile = new FileDescriptor(name, sizeInBlocks, -1, "admin", colorHex);
+            TreeNode<FileDescriptor> fileNode = new TreeNode<>(newFile);
+            
+            JournalEntry tx = new JournalEntry("TX-" + System.currentTimeMillis(), "CREATE", fileNode, parentFolder);
+            journal.add(tx); // Lo guardamos en la bitácora
+
+            // 2. Ejecutamos la operación real (Reserva de Disco y asignación al árbol)
+            int startBlock = disk.allocateBlocks(sizeInBlocks, name, colorHex);
+            if (startBlock == -1) {
+                tx.setStatus("ABORTADA (Sin Espacio)");
+                return false; // El 'finally' se encargará de liberar el semáforo automáticamente
+            }
+            fileNode.getData().setStartBlockId(startBlock); 
+            parentFolder.addChild(fileNode);
+
+            // 3. Crash simulado
+            if (simularFallo) {
+                throw new RuntimeException("CRASH_SISTEMA"); // Rompemos el sistema a propósito
+            }
+
+            // 4. Si todo salió bien, hacemos COMMIT
+            tx.setStatus("CONFIRMADA");
+            return true;
+
+        } finally {
+            // Esto se ejecuta aunque haya un "return false" o explote el "CRASH_SISTEMA"
+            mutexDisco.signal(); 
         }
-        fileNode.getData().setStartBlockId(startBlock); 
-        parentFolder.addChild(fileNode);
-
-        // 3. ¡SIMULAMOS EL CRASH JUSTO ANTES DEL COMMIT!
-        if (simularFallo) {
-            throw new RuntimeException("CRASH_SISTEMA"); // Rompemos el sistema a propósito
-        }
-
-        // 4. Si todo salió bien, hacemos COMMIT
-        tx.setStatus("CONFIRMADA");
-        return true;
     }
 
     public boolean createDirectory(TreeNode<FileDescriptor> parentFolder, String name) {
         if (!isAdminMode || !parentFolder.getData().isDirectory()) return false;
-        FileDescriptor newDir = new FileDescriptor(name, "admin");
-        parentFolder.addChild(new TreeNode<>(newDir));
-        return true;
+        
+        mutexDisco.waitS(); // 🛑 Pedimos permiso
+        try {
+            FileDescriptor newDir = new FileDescriptor(name, "admin");
+            parentFolder.addChild(new TreeNode<>(newDir));
+            return true;
+        } finally {
+            mutexDisco.signal(); // 🟢 Liberamos
+        }
     }
 
     public boolean renameNode(TreeNode<FileDescriptor> targetNode, String newName) {
         if (!isAdminMode) return false; 
-        targetNode.getData().setName(newName);
-        return true;
+        
+        mutexDisco.waitS(); // 🛑 Pedimos permiso
+        try {
+            targetNode.getData().setName(newName);
+            
+            // Opcional: Si quisieras ser muy perfeccionista, aquí también deberías 
+            // ir al disco y cambiar el "ownerFile" de los bloques físicos, 
+            // pero cambiar el nombre en el árbol ya cumple el requisito visual.
+            return true;
+        } finally {
+            mutexDisco.signal(); // 🟢 Liberamos
+        }
     }
+
+    // --- ELIMINACIÓN BLINDADA CONTRA DEADLOCKS ---
 
     public boolean deleteNode(TreeNode<FileDescriptor> parentFolder, TreeNode<FileDescriptor> nodeToDelete) {
         if (!isAdminMode) return false; 
+        
+        mutexDisco.waitS(); // 🛑 Trancamos el disco UNA SOLA VEZ al inicio
+        try {
+            return eliminarNodoRecursivo(parentFolder, nodeToDelete);
+        } finally {
+            mutexDisco.signal(); // 🟢 Liberamos cuando TODO se haya borrado
+        }
+    }
+
+    // Método auxiliar (privado) que hace el trabajo pesado sin pedir semáforos,
+    // porque el método público ya trancó la puerta por nosotros.
+    private boolean eliminarNodoRecursivo(TreeNode<FileDescriptor> parentFolder, TreeNode<FileDescriptor> nodeToDelete) {
         FileDescriptor metadata = nodeToDelete.getData();
 
         if (metadata.isDirectory()) {
             LinkedList<TreeNode<FileDescriptor>> children = nodeToDelete.getChildren();
             while (children.getSize() > 0) {
-                deleteNode(nodeToDelete, children.get(0)); 
+                // Llamada recursiva usando el método auxiliar
+                eliminarNodoRecursivo(nodeToDelete, children.get(0)); 
             }
         } else {
+            // Si es un archivo, liberamos sus bloques en el disco
             disk.freeBlocks(metadata.getStartBlockId());
         }
+        
+        // Finalmente, quitamos el nodo del árbol
         parentFolder.getChildren().remove(nodeToDelete);
         return true;
     }
